@@ -6,11 +6,13 @@ module Gembrew
     class Shell < MisterBin::Command
       help 'Open a Homebrew shell for this tap repository'
 
-      usage 'gembrew shell'
+      usage 'gembrew shell [--pristine]'
       usage 'gembrew shell (-h|--help)'
 
+      option '-p --pristine', 'Open without mounting the local tap'
+
       def run
-        DockerShell.new.call
+        DockerShell.new.call pristine: args['--pristine']
       end
     end
   end

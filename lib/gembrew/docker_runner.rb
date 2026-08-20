@@ -12,13 +12,15 @@ module Gembrew
       @command_runner = command_runner || method(:run_command)
     end
 
-    def call(*command, interactive: false)
+    def call(*command, interactive: false, pristine: false)
       docker_command = ['docker', 'run', '--rm', '--init', '--name', container_name]
       docker_command << '-it' if interactive
-      docker_command.concat environment(interactive: interactive)
-      docker_command.push '--workdir', '/work'
-      docker_command.push '--volume', "#{project_path}:/work"
-      docker_command.push '--volume', "#{project_path}:#{TAP_PATH}"
+      docker_command.concat environment(interactive: interactive, pristine: pristine)
+      unless pristine
+        docker_command.push '--workdir', '/work'
+        docker_command.push '--volume', "#{project_path}:/work"
+        docker_command.push '--volume', "#{project_path}:#{TAP_PATH}"
+      end
       docker_command << IMAGE
       docker_command.concat command
       command_runner.call(*docker_command, chdir: project_path)
@@ -28,13 +30,14 @@ module Gembrew
 
     attr_reader :command_runner
 
-    def environment(interactive:)
+    def environment(interactive:, pristine:)
       result = %w[
         --env HOMEBREW_NO_AUTO_UPDATE=1
         --env HOMEBREW_NO_INSTALL_CLEANUP=1
         --env HOMEBREW_NO_INSTALL_FROM_API=1
       ]
-      result.push '--env', 'PS1=\n\ngembrew $ ' if interactive
+      prompt = pristine ? 'homebrew' : 'gembrew'
+      result.push '--env', "PS1=\\n\\n#{prompt} $ " if interactive
       result
     end
 

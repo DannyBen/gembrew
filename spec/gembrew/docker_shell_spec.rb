@@ -6,8 +6,13 @@ describe Gembrew::DockerShell do
   let(:runner) { double call: true }
 
   it 'opens an interactive Homebrew container' do
-    expect(runner).to receive(:call).with('bash', '--norc', interactive: true)
+    expect(runner).to receive(:call).with('bash', '--norc', interactive: true, pristine: false)
     expect(subject.call).to be true
+  end
+
+  it 'opens a pristine interactive Homebrew container' do
+    expect(runner).to receive(:call).with('bash', '--norc', interactive: true, pristine: true)
+    expect(subject.call(pristine: true)).to be true
   end
 
   context 'when the shell fails' do

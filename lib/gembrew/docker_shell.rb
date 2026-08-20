@@ -7,8 +7,8 @@ module Gembrew
       @runner = runner
     end
 
-    def call
-      success = runner.call 'bash', '--norc', interactive: true
+    def call(pristine: false)
+      success = runner.call 'bash', '--norc', interactive: true, pristine: pristine
       raise Error, 'Homebrew shell exited with an error' unless success
 
       true

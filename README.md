@@ -111,6 +111,13 @@ brew install --build-from-source example
 brew test example
 ```
 
+To test a published tap without mounting the local repository, open a pristine
+Homebrew shell:
+
+```shell
+gembrew shell --pristine
+```
+
 Run the complete workflow non-interactively in one clean container:
 
 ```shell

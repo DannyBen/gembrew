@@ -32,6 +32,15 @@ describe Gembrew::DockerRunner do
     expect(arguments).to include '-it', 'PS1=\n\ngembrew $ '
   end
 
+  it 'runs a pristine container without mounting the local tap' do
+    arguments = []
+    allow(command_runner).to receive(:call) { |*args| arguments.replace args }
+    subject.call 'bash', interactive: true, pristine: true
+
+    expect(arguments).to include '-it', 'PS1=\n\nhomebrew $ '
+    expect(arguments).not_to include '--workdir', '--volume'
+  end
+
   it 'streams command output through the system process' do
     runner = described_class.allocate
     allow(runner).to receive(:system).with('command', chdir: '/tap').and_return true
