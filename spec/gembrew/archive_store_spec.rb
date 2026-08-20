@@ -1,136 +1,98 @@
 require 'spec_helper'
 require 'fileutils'
-require 'stringio'
 require 'tmpdir'
 
 describe Gembrew::ArchiveStore do
   let(:reporter) { instance_double(Gembrew::Reporter, archive: nil) }
 
-  def build_archive(directory, name: 'example', version: '1.2.3')
-    spec = Gem::Specification.new do |gem|
-      gem.name = name
-      gem.version = version
-      gem.summary = 'Fixture gem'
-      gem.authors = ['Fixture']
-      gem.files = []
+  context 'with a cached archive' do
+    subject { described_class.new cache_path: directory/'gembrew', reporter: reporter }
+
+    let(:directory) { Pathname Dir.mktmpdir }
+    let(:gem_paths) { [] }
+    let!(:archive) do
+      archive_path.mkpath
+      build_archive archive_path
     end
 
-    filename = nil
-    Dir.chdir(directory) do
-      capture_output { filename = Gem::Package.build(spec, true) }
+    before { allow(Gem).to receive(:path).and_return gem_paths }
+    after { directory.rmtree }
+
+    context 'with an archive in the RubyGems cache' do
+      let(:archive_path) { directory/'installed/cache' }
+      let(:gem_paths) { [(directory/'installed').to_s] }
+
+      it 'prefers the RubyGems archive' do
+        expect(subject.fetch('example', '1.2.3', directory)).to eq archive
+      end
     end
-    Pathname(directory)/filename
-  end
 
-  def capture_output
-    original_stdout = $stdout
-    $stdout = StringIO.new
-    yield
-  ensure
-    $stdout = original_stdout
-  end
+    context 'with an archive in the Gembrew cache' do
+      let(:archive_path) { directory/'gembrew' }
 
-  it 'prefers an archive retained in a local RubyGems cache' do
-    Dir.mktmpdir do |directory|
-      gem_path = Pathname(directory)/'installed'
-      cache_path = gem_path/'cache'
-      cache_path.mkpath
-      archive = build_archive(cache_path)
-      store = described_class.new(cache_path: Pathname(directory)/'gembrew', reporter: reporter)
-      allow(Gem).to receive(:path).and_return [gem_path.to_s]
-
-      expect(store.fetch('example', '1.2.3', directory)).to eq archive
+      it 'uses the Gembrew archive' do
+        expect(subject.fetch('example', '1.2.3', directory)).to eq archive
+      end
     end
   end
 
-  it 'uses Gembrew cache when RubyGems has no retained archive' do
-    Dir.mktmpdir do |directory|
-      cache_path = Pathname(directory)/'gembrew'
-      cache_path.mkpath
-      archive = build_archive(cache_path)
-      store = described_class.new(cache_path: cache_path, reporter: reporter)
-      allow(Gem).to receive(:path).and_return []
+  context 'when downloading an archive' do
+    subject { store.fetch 'example', version, download_path }
 
-      expect(store.fetch('example', '1.2.3', directory)).to eq archive
+    let(:store) do
+      described_class.new cache_path: directory/'cache', reporter: reporter, command_runner: runner
     end
-  end
-
-  it 'downloads and retains a missing archive' do
-    Dir.mktmpdir do |directory|
-      source_path = Pathname(directory)/'source'
-      download_path = Pathname(directory)/'download'
-      cache_path = Pathname(directory)/'cache'
-      source_path.mkpath
-      download_path.mkpath
-      archive = build_archive(source_path)
-      commands = []
-      runner = lambda do |*command, chdir:|
+    let(:directory) { Pathname Dir.mktmpdir }
+    let(:download_path) { directory/'download' }
+    let(:version) { '1.2.3' }
+    let(:commands) { [] }
+    let(:runner) do
+      lambda do |*command, chdir:|
         commands << [command, chdir]
         FileUtils.cp archive, chdir
       end
-      store = described_class.new(
-        cache_path: cache_path, reporter: reporter, command_runner: runner
-      )
+    end
+    let(:archive) { build_archive directory/'source' }
+
+    before do
+      (directory/'source').mkpath
+      download_path.mkpath
       allow(Gem).to receive(:path).and_return []
+    end
 
-      result = store.fetch('example', '1.2.3', download_path)
+    after { directory.rmtree }
 
+    it 'downloads and retains a missing archive' do
+      expect(subject).to eq directory/'cache/example-1.2.3.gem'
+      expect(subject).to be_file
       expect(commands).to eq [
         [%w[gem fetch example --platform ruby --version 1.2.3], download_path],
       ]
-      expect(result).to eq cache_path/'example-1.2.3.gem'
-      expect(result).to be_file
     end
-  end
 
-  it 'downloads the latest version when no version is requested' do
-    Dir.mktmpdir do |directory|
-      source_path = Pathname(directory)/'source'
-      download_path = Pathname(directory)/'download'
-      source_path.mkpath
-      download_path.mkpath
-      archive = build_archive(source_path)
-      command = nil
-      runner = lambda do |*args, chdir:|
-        command = args
-        FileUtils.cp archive, chdir
+    context 'without a requested version' do
+      let(:version) { nil }
+
+      it 'downloads the latest version' do
+        expect(subject).to be_file
+        expect(commands.first.first).to eq %w[gem fetch example --platform ruby]
       end
-      store = described_class.new(
-        cache_path: Pathname(directory)/'cache', reporter: reporter, command_runner: runner
-      )
-
-      store.fetch 'example', nil, download_path
-
-      expect(command).to eq %w[gem fetch example --platform ruby]
     end
-  end
 
-  it 'ignores a corrupt archive in Gembrew cache' do
-    Dir.mktmpdir do |directory|
-      source_path = Pathname(directory)/'source'
-      download_path = Pathname(directory)/'download'
-      cache_path = Pathname(directory)/'cache'
-      source_path.mkpath
-      download_path.mkpath
-      cache_path.mkpath
-      archive = build_archive(source_path)
-      File.write cache_path/'example-1.2.3.gem', 'not a gem'
-      runner = lambda do |*_, chdir:|
-        FileUtils.cp archive, chdir
+    context 'with a corrupt archive in the Gembrew cache' do
+      before do
+        (directory/'cache').mkpath
+        (directory/'cache/example-1.2.3.gem').write 'not a gem'
       end
-      store = described_class.new(
-        cache_path: cache_path, reporter: reporter, command_runner: runner
-      )
-      allow(Gem).to receive(:path).and_return []
 
-      result = store.fetch 'example', '1.2.3', download_path
-
-      expect(Gem::Package.new(result.to_s).spec.name).to eq 'example'
+      it 'downloads a valid replacement' do
+        expect(Gem::Package.new(subject.to_s).spec.name).to eq 'example'
+      end
     end
   end
 
   describe 'command execution' do
-    subject(:store) do
+    subject do
       described_class.new(cache_path: Pathname(directory)/'cache', reporter: reporter)
     end
 
@@ -139,14 +101,14 @@ describe Gembrew::ArchiveStore do
     after { FileUtils.remove_entry directory }
 
     it 'returns output from a successful command' do
-      output = store.send :run_command, 'ruby', '-e', 'print "done"', chdir: directory
+      output = subject.send :run_command, 'ruby', '-e', 'print "done"', chdir: directory
 
       expect(output).to eq 'done'
     end
 
     it 'raises a Gembrew error when a command fails' do
       expect do
-        store.send :run_command, 'ruby', '-e', 'abort "failed"', chdir: directory
+        subject.send :run_command, 'ruby', '-e', 'abort "failed"', chdir: directory
       end.to raise_error(Gembrew::Error, "failed\n")
     end
   end

@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    dependency (1.0.0)
+    dependency (1.0.0-x86_64-linux)
+    root (1.0.0)
+      dependency
+
+PLATFORMS
+  ruby
+  x86_64-linux
+
+DEPENDENCIES
+  root (= 1.0.0)
+
+BUNDLED WITH
+   4.0.17

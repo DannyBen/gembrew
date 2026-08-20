@@ -1,0 +1,29 @@
+services:
+  brew: &base
+    image: homebrew/brew:main
+    working_dir: /work
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_INSTALL_FROM_API: "1"
+      GEMBREW_GEM: example
+      PS1: "\n\nbrew $ "
+    volumes:
+      - ..:/work
+      - ..:/home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/gembrew/homebrew-tap
+    command: ["bash", "--norc"]
+    stdin_open: true
+    tty: true
+
+  check:
+    <<: *base
+    command:
+      - bash
+      - -euc
+      - |
+        brew style "$${GEMBREW_GEM}"
+        brew audit --new --online "$${GEMBREW_GEM}"
+        brew install --build-from-source "$${GEMBREW_GEM}"
+        brew test "$${GEMBREW_GEM}"
+    stdin_open: false
+    tty: false

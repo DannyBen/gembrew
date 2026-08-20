@@ -26,7 +26,7 @@ module Gembrew
     def executable = data['executable']
 
     def test_body
-      @test_body ||= if data.key?('test')
+      @test_body ||= if data.has_key?('test')
         data.fetch('test').to_s
       else
         test_path = path.dirname/data.fetch('test_from_file')
@@ -57,7 +57,7 @@ module Gembrew
       require_value 'gem'
       require_value 'output'
 
-      return unless data.key?('test') == data.key?('test_from_file')
+      return unless data.has_key?('test') == data.has_key?('test_from_file')
 
       raise Error, 'Provide exactly one of test or test_from_file'
     end

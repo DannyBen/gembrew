@@ -12,27 +12,36 @@ module Gembrew
 
     def call
       resolution = resolver.resolve(config.gem_name, config.version)
-      spec = resolution.spec
       output_path = config.output_path
       output_path.dirname.mkpath
-      output_path.write renderer.render(
-        formula_name: formula_name(spec.name),
-        gem_name:     spec.name,
-        version:      spec.version.to_s,
-        sha256:       resolution.sha256,
-        description:  config.description || spec.summary,
-        homepage:     config.homepage || inferred_homepage(spec),
-        license:      config.license || spec.license || spec.licenses.first,
-        executable:   config.executable || spec.executables.first || spec.name,
-        resources:    resolution.resources,
-        test_body:    config.test_body
-      )
+      output_path.write renderer.render(formula_data(resolution))
       output_path
     end
 
   private
 
     attr_reader :config, :resolver, :renderer
+
+    def formula_data(resolution)
+      spec = resolution.spec
+      {
+        formula_name: formula_name(spec.name),
+        gem_name:     spec.name,
+        version:      spec.version.to_s,
+        sha256:       resolution.sha256,
+        resources:    resolution.resources,
+      }.merge metadata(spec)
+    end
+
+    def metadata(spec)
+      {
+        description: config.description || spec.summary,
+        homepage:    config.homepage || inferred_homepage(spec),
+        license:     config.license || spec.license || spec.licenses.first,
+        executable:  config.executable || spec.executables.first || spec.name,
+        test_body:   config.test_body,
+      }
+    end
 
     def formula_name(gem_name)
       gem_name.split(/[-_]/).map(&:capitalize).join

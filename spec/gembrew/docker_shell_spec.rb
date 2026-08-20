@@ -1,55 +1,44 @@
 require 'spec_helper'
-require 'tmpdir'
 
 describe Gembrew::DockerShell do
+  subject { described_class.new project_path: project_path, command_runner: runner }
+
+  let(:project_path) { fixture 'compose' }
+  let(:runner) { double call: true }
+
   it 'opens the generated Docker Compose service' do
-    Dir.mktmpdir do |directory|
-      compose_path = Pathname(directory)/'support/compose.yaml'
-      compose_path.dirname.mkpath
-      compose_path.write "services: {}\n"
-      invocation = nil
-      runner = lambda do |*command, chdir:|
-        invocation = { command: command, chdir: chdir }
-        true
-      end
+    expect(runner).to receive(:call).with(
+      *%w[docker compose -f support/compose.yaml run --rm brew],
+      chdir: Pathname(project_path)
+    )
+    expect(subject.call).to be true
+  end
 
-      result = described_class.new(project_path: directory, command_runner: runner).call
+  context 'without a Compose file' do
+    let(:project_path) { fixture 'missing-compose' }
 
-      expect(result).to be true
-      expect(invocation).to eq(
-        command: %w[docker compose -f support/compose.yaml run --rm brew],
-        chdir:   Pathname(directory)
+    it 'requires the generated Compose file' do
+      expect { subject.call }.to raise_error(
+        Gembrew::Error,
+        "Compose file does not exist: #{project_path}/support/compose.yaml"
       )
     end
   end
 
-  it 'requires the generated Compose file' do
-    Dir.mktmpdir do |directory|
-      expect { described_class.new(project_path: directory).call }
-        .to raise_error(
-          Gembrew::Error,
-          "Compose file does not exist: #{directory}/support/compose.yaml"
-        )
+  context 'when the shell fails' do
+    let(:runner) { double call: false }
+
+    it 'reports a failed shell' do
+      expect { subject.call }.to raise_error(Gembrew::Error, 'Homebrew shell exited with an error')
     end
   end
 
-  it 'reports a failed shell' do
-    Dir.mktmpdir do |directory|
-      compose_path = Pathname(directory)/'support/compose.yaml'
-      compose_path.dirname.mkpath
-      compose_path.write "services: {}\n"
-      runner = ->(*_, chdir:) { false }
+  describe '#run_command' do
+    let(:shell) { described_class.allocate }
 
-      expect do
-        described_class.new(project_path: directory, command_runner: runner).call
-      end.to raise_error(Gembrew::Error, 'Homebrew shell exited with an error')
+    it 'runs commands with inherited input and output' do
+      allow(shell).to receive(:system).with('command', chdir: '/tap').and_return true
+      expect(shell.send(:run_command, 'command', chdir: Pathname('/tap'))).to be true
     end
-  end
-
-  it 'runs commands with inherited input and output' do
-    shell = described_class.allocate
-
-    expect(shell).to receive(:system).with('command', chdir: '/tap').and_return true
-    expect(shell.send(:run_command, 'command', chdir: Pathname('/tap'))).to be true
   end
 end

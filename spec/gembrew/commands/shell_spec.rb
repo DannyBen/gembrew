@@ -1,11 +1,15 @@
 require 'spec_helper'
 
 describe Gembrew::Commands::Shell do
-  it 'opens the Homebrew shell' do
-    shell = instance_double(Gembrew::DockerShell, call: true)
-    allow(Gembrew::DockerShell).to receive(:new).and_return shell
+  subject { described_class }
 
-    expect { described_class.execute %w[shell] }.not_to output.to_stdout
-    expect(shell).to have_received(:call)
+  let(:shell) { instance_double Gembrew::DockerShell, call: true }
+
+  before { allow(Gembrew::DockerShell).to receive(:new).and_return shell }
+
+  it 'opens the Homebrew shell' do
+    expect(shell).to receive(:call)
+
+    expect { subject.execute %w[shell] }.not_to output.to_stdout
   end
 end

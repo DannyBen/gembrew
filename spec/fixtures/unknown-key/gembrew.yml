@@ -1,0 +1,4 @@
+gem: example
+output: Formula/example.rb
+test: test
+unknown: true

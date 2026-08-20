@@ -1,197 +1,161 @@
 require 'spec_helper'
 require 'digest'
 require 'fileutils'
-require 'stringio'
 require 'tmpdir'
 
 describe Gembrew::Resolver do
   let(:reporter) do
-    instance_double(Gembrew::Reporter, resolving: nil, collecting: nil, archive: nil)
+    instance_double Gembrew::Reporter, resolving: nil, collecting: nil, archive: nil
   end
 
-  def root_spec
-    Gem::Specification.new do |gem|
-      gem.name = 'root'
-      gem.version = '1.0.0'
+  context 'when resolving a gem' do
+    subject { resolver.resolve 'root', '1.0.0' }
+
+    let(:directory) { Pathname Dir.mktmpdir }
+    let(:archives) do
+      archive_path = directory/'fixtures'
+      archive_path.mkpath
+      {
+        root:       build_archive(archive_path, name: 'root', version: '1.0.0'),
+        dependency: build_archive(archive_path, name: 'dependency', version: '2.0.0'),
+      }
     end
-  end
-
-  def build_archive(directory, name:, version:)
-    spec = Gem::Specification.new do |gem|
-      gem.name = name
-      gem.version = version
-      gem.summary = 'Fixture gem'
-      gem.authors = ['Fixture']
-      gem.files = []
+    let(:archive_store) { instance_double Gembrew::ArchiveStore }
+    let(:runner) do
+      lambda do |*command, **|
+        FileUtils.cp fixture('resolver/basic.lock'), command.fetch(command.index('--lockfile') + 1)
+      end
+    end
+    let(:resolver) do
+      described_class.new(
+        cache_root: directory/'cache', reporter: reporter,
+        command_runner: runner, archive_store: archive_store
+      )
     end
 
-    filename = nil
-    original_stdout = $stdout
-    $stdout = StringIO.new
-    Dir.chdir(directory) { filename = Gem::Package.build(spec, true) }
-    Pathname(directory)/filename
-  ensure
-    $stdout = original_stdout
-  end
-
-  it 'resolves archives and calculates their checksums' do
-    Dir.mktmpdir do |directory|
-      fixture_path = Pathname(directory)/'fixtures'
-      fixture_path.mkpath
-      root_archive = build_archive fixture_path, name: 'root', version: '1.0.0'
-      dependency_archive = build_archive fixture_path, name: 'dependency', version: '2.0.0'
-      archive_store = instance_double(Gembrew::ArchiveStore)
+    before do
       allow(archive_store).to receive(:fetch) do |name, _version, _path, **_progress|
-        name == 'root' ? root_archive : dependency_archive
+        archives.fetch name.to_sym
       end
-      runner = lambda do |*command, chdir:, env:|
-        Pathname(command.fetch(command.index('--lockfile') + 1)).write <<~LOCK
-          GEM
-            remote: https://rubygems.org/
-            specs:
-              dependency (2.0.0)
-              root (1.0.0)
-                dependency
+    end
 
-          PLATFORMS
-            ruby
+    after { directory.rmtree }
 
-          DEPENDENCIES
-            root (= 1.0.0)
-
-          BUNDLED WITH
-             4.0.17
-        LOCK
-      end
-      resolver = described_class.new(
-        cache_root:     Pathname(directory)/'cache',
-        reporter:       reporter,
-        command_runner: runner,
-        archive_store:  archive_store
-      )
-
-      resolution = resolver.resolve 'root', '1.0.0'
-
-      expect(resolution.spec.name).to eq 'root'
-      expect(resolution.sha256).to eq Digest::SHA256.file(root_archive).hexdigest
-      expect(resolution.resources).to eq [
-        Gembrew::Resource.new(
-          'dependency',
-          '2.0.0',
-          Digest::SHA256.file(dependency_archive).hexdigest
-        ),
-      ]
-      expect(reporter).to have_received(:collecting).with(1)
-      expect(archive_store).to have_received(:fetch)
+    it 'calculates checksums for the gem and its resources' do
+      expect(archive_store).to receive(:fetch)
         .with('dependency', Gem::Version.new('2.0.0'), anything, index: 1, total: 1)
+      expect(reporter).to receive(:collecting).with(1)
+      expect(subject.spec.name).to eq 'root'
+      expect(subject.sha256).to eq Digest::SHA256.file(archives[:root]).hexdigest
+      expect(subject.resources).to eq [Gembrew::Resource.new(
+        'dependency', '2.0.0', Digest::SHA256.file(archives[:dependency]).hexdigest
+      )]
     end
   end
 
-  it 'selects generic Ruby variants from a multi-platform lockfile' do
-    Dir.mktmpdir do |directory|
-      lockfile = Pathname(directory)/'Gemfile.lock'
-      lockfile.write <<~LOCK
-        GEM
-          remote: https://rubygems.org/
-          specs:
-            dependency (1.0.0)
-            dependency (1.0.0-x86_64-linux)
-            root (1.0.0)
-              dependency
+  context 'with a multi-platform lockfile' do
+    subject { resolver.send :dependency_specs, lockfile, root_spec }
 
-        PLATFORMS
-          ruby
-          x86_64-linux
+    let(:lockfile) { Pathname fixture('resolver/multi-platform.lock') }
+    let(:root_spec) do
+      Gem::Specification.new do |gem|
+        gem.name = 'root'
+        gem.version = '1.0.0'
+      end
+    end
+    let(:resolver) do
+      described_class.new reporter: reporter, archive_store: instance_double(Gembrew::ArchiveStore)
+    end
 
-        DEPENDENCIES
-          root (= 1.0.0)
-
-        BUNDLED WITH
-           4.0.17
-      LOCK
-      resolver = described_class.new(
-        cache_root:    Pathname(directory)/'cache',
-        reporter:      reporter,
-        archive_store: instance_double(Gembrew::ArchiveStore)
-      )
-
-      specs = resolver.send :dependency_specs, lockfile, root_spec
-
-      expect(specs.length).to eq 1
-      expect(specs.first.name).to eq 'dependency'
-      expect(specs.first.platform).to eq Gem::Platform::RUBY
+    it 'selects the generic Ruby variant' do
+      expect(subject.length).to eq 1
+      expect(subject.first.name).to eq 'dependency'
+      expect(subject.first.platform).to eq Gem::Platform::RUBY
     end
   end
 
-  it 'locks with the generic Ruby platform forced' do
-    Dir.mktmpdir do |directory|
-      temporary = Pathname(directory)/'work'
-      temporary.mkpath
-      invocation = nil
-      runner = lambda do |*command, chdir:, env:|
-        invocation = { command: command, chdir: chdir, env: env }
+  context 'when locking dependencies' do
+    subject { resolver.send :lock, root_spec, temporary }
+
+    let(:directory) { Pathname Dir.mktmpdir }
+    let(:temporary) { directory/'work' }
+    let(:invocation) { {} }
+    let(:runner) do
+      lambda do |*command, chdir:, env:|
+        invocation.replace command: command, chdir: chdir, env: env
         Pathname(command.fetch(command.index('--lockfile') + 1)).write "lock\n"
       end
-      resolver = described_class.new(
-        cache_root:     Pathname(directory)/'cache',
-        reporter:       reporter,
-        command_runner: runner,
-        archive_store:  instance_double(Gembrew::ArchiveStore)
+    end
+    let(:resolver) do
+      described_class.new(
+        cache_root: directory/'cache', reporter: reporter,
+        command_runner: runner, archive_store: instance_double(Gembrew::ArchiveStore)
       )
+    end
+    let(:root_spec) do
+      Gem::Specification.new do |gem|
+        gem.name = 'root'
+        gem.version = '1.0.0'
+      end
+    end
 
-      lockfile = resolver.send :lock, root_spec, temporary
+    before { temporary.mkpath }
+    after { directory.rmtree }
 
+    it 'forces the generic Ruby platform' do
+      expect(subject).to be_file
       expect(invocation[:command]).to include 'bundle', 'lock', '--add-platform', 'ruby'
       expect(invocation[:chdir]).to eq temporary
       expect(invocation[:env]).to eq(
         'BUNDLE_FORCE_RUBY_PLATFORM' => 'true',
-        'BUNDLE_GEMFILE'             => temporary.join('Gemfile').to_s
+        'BUNDLE_GEMFILE'             => (temporary/'Gemfile').to_s
       )
-      expect(lockfile).to be_file
     end
   end
 
-  it 'uses the XDG cache directory by default' do
-    Dir.mktmpdir do |directory|
+  context 'with an XDG cache directory' do
+    subject do
+      described_class.new reporter: reporter, archive_store: instance_double(Gembrew::ArchiveStore)
+    end
+
+    let(:directory) { Pathname Dir.mktmpdir }
+
+    around do |example|
       original = ENV['XDG_CACHE_HOME']
-      ENV['XDG_CACHE_HOME'] = directory
-
-      resolver = described_class.new(
-        reporter:      reporter,
-        archive_store: instance_double(Gembrew::ArchiveStore)
-      )
-
-      expect(resolver.cache_root).to eq Pathname(directory)/'gembrew'
+      ENV['XDG_CACHE_HOME'] = directory.to_s
+      example.run
     ensure
       ENV['XDG_CACHE_HOME'] = original
+      directory.rmtree
+    end
+
+    it 'uses it as the default cache root' do
+      expect(subject.cache_root).to eq directory/'gembrew'
     end
   end
 
   describe 'command execution' do
-    subject(:resolver) do
+    subject do
       described_class.new(
-        cache_root:    Pathname(directory)/'cache',
-        reporter:      reporter,
+        cache_root: directory/'cache', reporter: reporter,
         archive_store: instance_double(Gembrew::ArchiveStore)
       )
     end
 
-    let(:directory) { Dir.mktmpdir }
+    let(:directory) { Pathname Dir.mktmpdir }
 
-    after { FileUtils.remove_entry directory }
+    after { directory.rmtree }
 
     it 'returns output from a successful command' do
-      output = resolver.send(
+      expect(subject.send(
         :run_command, 'ruby', '-e', 'print ENV.fetch("VALUE")',
         chdir: directory, env: { 'VALUE' => 'done' }
-      )
-
-      expect(output).to eq 'done'
+      )).to eq 'done'
     end
 
     it 'raises a Gembrew error when a command fails' do
       expect do
-        resolver.send :run_command, 'ruby', '-e', 'abort "failed"', chdir: directory
+        subject.send :run_command, 'ruby', '-e', 'abort "failed"', chdir: directory
       end.to raise_error(Gembrew::Error, "failed\n")
     end
   end

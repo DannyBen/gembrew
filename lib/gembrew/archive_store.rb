@@ -64,7 +64,7 @@ module Gembrew
       report :downloading, name, version, index: index, total: total
       before = download_path.children
       command = ['gem', 'fetch', name, '--platform', 'ruby']
-      command.concat ['--version', version.to_s] if version
+      command.push '--version', version.to_s if version
       command_runner.call(*command, chdir: download_path)
 
       candidates = download_path.children - before

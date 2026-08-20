@@ -34,10 +34,7 @@ module Gembrew
 
         reporter.collecting dependencies.length
         resources = dependencies.each_with_index.map do |spec, index|
-          archive = archive_store.fetch(
-            spec.name, spec.version, temporary, index: index + 1, total: dependencies.length
-          )
-          Resource.new(spec.name, spec.version.to_s, Digest::SHA256.file(archive).hexdigest)
+          resource spec, temporary, index + 1, dependencies.length
         end
 
         Resolution.new(root_spec, Digest::SHA256.file(root_archive).hexdigest, resources)
@@ -47,6 +44,11 @@ module Gembrew
   private
 
     attr_reader :reporter, :command_runner, :archive_store
+
+    def resource(spec, temporary, index, total)
+      archive = archive_store.fetch spec.name, spec.version, temporary, index: index, total: total
+      Resource.new spec.name, spec.version.to_s, Digest::SHA256.file(archive).hexdigest
+    end
 
     def default_cache_root
       cache_home = ENV.fetch('XDG_CACHE_HOME', File.expand_path('~/.cache'))

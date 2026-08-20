@@ -1,0 +1,15 @@
+gem: example
+output: Formula/example.rb
+
+test: |-
+  system bin/"example", "--version"
+
+# Optional overrides:
+# version: "1.2.3"
+# desc: Example command-line application
+# homepage: https://example.com
+# license: MIT
+# executable: example
+
+# To load the Homebrew test body from a Ruby file, replace `test` above with:
+# test_from_file: support/test.rb

@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    dependency (2.0.0)
+    root (1.0.0)
+      dependency
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  root (= 1.0.0)
+
+BUNDLED WITH
+   4.0.17

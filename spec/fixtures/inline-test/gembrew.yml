@@ -1,0 +1,5 @@
+gem: bashly
+output: Formula/bashly.rb
+desc: Bashly CLI
+test: |-
+  system bin/"bashly", "--version"
