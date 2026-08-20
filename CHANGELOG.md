@@ -1,11 +1,13 @@
 Changelog
 ========================================
 
+<!-- break v0.1.1 -->
+
 v0.1.1 - 2026-08-20
 ----------------------------------------
 
 - Make Gembrew manage multi-formula taps [`43ceefa`](https://github.com/dannyben/gembrew/commit/43ceefa)
-- Add `gembrew shell --pristine for clean homebrew environment [`388831d`](https://github.com/dannyben/gembrew/commit/388831d)
+- Add `gembrew shell --pristine` for clean homebrew environment [`388831d`](https://github.com/dannyben/gembrew/commit/388831d)
 - Compare [`v0.1.0..v0.1.1`](https://github.com/dannyben/gembrew/compare/v0.1.0..v0.1.1)
 
 
