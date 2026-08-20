@@ -4,9 +4,10 @@ Changelog
 v0.1.0 - 2026-08-20
 ----------------------------------------
 
-- Initial commit
-- Add `gembrew shell`
-- Add `gembrew check`
-- Refactor specs
+- Initial commit [`b56628f`](https://github.com/dannyben/gembrew/commit/b56628f)
+- Add `gembrew shell` [`9157ae4`](https://github.com/dannyben/gembrew/commit/9157ae4)
+- Add `gembrew check` [`8d1dabd`](https://github.com/dannyben/gembrew/commit/8d1dabd)
+- Refactor specs [`c1cee70`](https://github.com/dannyben/gembrew/commit/c1cee70)
+- Compare [`v0.1.0`](https://github.com/dannyben/gembrew/compare/v0.1.0)
 
 
