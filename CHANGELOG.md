@@ -1,13 +1,13 @@
 Changelog
 ========================================
 
-Next
+v0.1.1 - 2026-08-20
 ----------------------------------------
 
-- Support multiple gem formulae in one tap
-- Add `gembrew add` and optional formula selection for `build` and `check`
-- Replace generated Docker Compose support with direct disposable containers
-- Create a starter tap README without overwriting existing documentation
+- Make Gembrew manage multi-formula taps [`43ceefa`](https://github.com/dannyben/gembrew/commit/43ceefa)
+- Add `gembrew shell --pristine for clean homebrew environment [`388831d`](https://github.com/dannyben/gembrew/commit/388831d)
+- Compare [`v0.1.0..v0.1.1`](https://github.com/dannyben/gembrew/compare/v0.1.0..v0.1.1)
+
 
 v0.1.0 - 2026-08-20
 ----------------------------------------
@@ -17,3 +17,5 @@ v0.1.0 - 2026-08-20
 - Add `gembrew check` [`8d1dabd`](https://github.com/dannyben/gembrew/commit/8d1dabd)
 - Refactor specs [`c1cee70`](https://github.com/dannyben/gembrew/commit/c1cee70)
 - Compare [`v0.1.0`](https://github.com/dannyben/gembrew/compare/v0.1.0)
+
+
