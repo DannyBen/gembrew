@@ -11,7 +11,19 @@ describe Gembrew::Commands::Init do
           .to output("Initialized #{directory} for example\n").to_stdout
       end
 
-      expect(File).to exist("#{directory}/gembrew.yml")
+      expect(File).to exist("#{directory}/gembrew/example.yml")
+    end
+  end
+
+  it 'initializes the tap without adding a gem' do
+    Dir.mktmpdir do |directory|
+      Dir.chdir(directory) do
+        expect { subject.execute %w[init] }
+          .to output("Initialized #{directory}\n").to_stdout
+      end
+
+      expect(File).to exist("#{directory}/Formula")
+      expect(File).to exist("#{directory}/gembrew")
     end
   end
 end

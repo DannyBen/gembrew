@@ -1,25 +1,15 @@
-require 'pathname'
+require 'shellwords'
+require 'gembrew/docker_runner'
 require 'gembrew/error'
 
 module Gembrew
   class DockerCheck
-    COMPOSE_PATH = Pathname('support/compose.yaml')
-
-    attr_reader :project_path
-
-    def initialize(project_path: Pathname.pwd, command_runner: nil)
-      @project_path = Pathname(project_path).expand_path
-      @command_runner = command_runner || method(:run_command)
+    def initialize(runner: DockerRunner.new)
+      @runner = runner
     end
 
-    def call
-      raise Error, "Compose file does not exist: #{compose_path}" unless compose_path.file?
-
-      success = command_runner.call(
-        'docker', 'compose', '-f', COMPOSE_PATH.to_s,
-        'run', '--rm', '--no-TTY', 'check',
-        chdir: project_path
-      )
+    def call(formula)
+      success = runner.call 'bash', '-euc', script(formula)
       raise Error, 'Homebrew checks failed' unless success
 
       true
@@ -27,14 +17,22 @@ module Gembrew
 
   private
 
-    attr_reader :command_runner
+    attr_reader :runner
 
-    def compose_path
-      project_path/COMPOSE_PATH
-    end
-
-    def run_command(*command, chdir:)
-      system(*command, chdir: chdir.to_s)
+    def script(formula)
+      formula = Shellwords.escape formula
+      <<~BASH
+        caption() { printf '\\n\\033[1;34m==> gembrew: %s\\033[0m\\n' "$1"; }
+        formula=#{formula}
+        caption "styling $formula"
+        brew style "$formula"
+        caption "auditing $formula"
+        brew audit --new --online "$formula"
+        caption "installing $formula"
+        brew install --build-from-source "$formula"
+        caption "testing $formula"
+        brew test "$formula"
+      BASH
     end
   end
 end

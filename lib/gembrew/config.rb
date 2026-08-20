@@ -4,22 +4,44 @@ require 'gembrew/error'
 
 module Gembrew
   class Config
-    FILENAME = 'gembrew.yml'
+    DIRECTORY = 'gembrew'
     ALLOWED_KEYS = %w[
       gem version output desc homepage license executable test test_from_file
     ].freeze
 
-    attr_reader :path
+    attr_reader :path, :project_path
 
-    def initialize(project_path = Pathname.pwd)
-      @path = Pathname(project_path).expand_path/FILENAME
+    def self.all(project_path = Pathname.pwd)
+      project_path = Pathname(project_path).expand_path
+      paths = (project_path/DIRECTORY).glob('*.yml').sort
+      raise Error, "No gem configurations found in #{project_path/DIRECTORY}" if paths.empty?
+
+      paths.map { |path| new path, project_path: project_path }
+    end
+
+    def self.find(name, project_path = Pathname.pwd)
+      validate_name! name
+      project_path = Pathname(project_path).expand_path
+      new project_path/DIRECTORY/"#{name}.yml", project_path: project_path
+    end
+
+    def self.validate_name!(name)
+      return name if name&.match?(/\A[a-zA-Z0-9._-]+\z/)
+
+      raise Error, "Invalid gem name: #{name.inspect}"
+    end
+
+    def initialize(path, project_path: nil)
+      @path = Pathname(path).expand_path
+      @project_path = project_path ? Pathname(project_path).expand_path : @path.dirname.parent
       @data = load_data
       validate
     end
 
+    def name = path.basename('.yml').to_s
     def gem_name = data.fetch('gem').to_s
     def version = data['version']&.to_s
-    def output_path = (path.dirname/data.fetch('output')).expand_path
+    def output_path = (project_path/(data['output'] || "Formula/#{name}.rb")).expand_path
     def description = data['desc']
     def homepage = data['homepage']
     def license = data['license']
@@ -29,7 +51,7 @@ module Gembrew
       @test_body ||= if data.has_key?('test')
         data.fetch('test').to_s
       else
-        test_path = path.dirname/data.fetch('test_from_file')
+        test_path = project_path/data.fetch('test_from_file')
         raise Error, "Test file does not exist: #{test_path}" unless test_path.file?
 
         test_path.read
@@ -55,7 +77,6 @@ module Gembrew
       raise Error, "Unknown configuration keys: #{unknown_keys.join(', ')}" if unknown_keys.any?
 
       require_value 'gem'
-      require_value 'output'
 
       return unless data.has_key?('test') == data.has_key?('test_from_file')
 

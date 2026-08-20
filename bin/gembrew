@@ -10,6 +10,8 @@ runner = Gembrew::CLI.runner
 
 begin
   exit runner.run ARGV
+rescue Interrupt
+  exit 130
 rescue => e
   puts e.backtrace.reverse if ENV['DEBUG']
   say! "rib` #{e.class} `\n#{e.message}"

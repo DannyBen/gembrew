@@ -1,5 +1,4 @@
 gem: example
-output: Formula/example.rb
 
 test: |-
   system bin/"example", "--version"

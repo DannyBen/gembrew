@@ -20,35 +20,56 @@ gembrew build
 gembrew check
 ```
 
-`init` requires an empty directory, with the exception of Git's `.git`
-directory. It creates a tap repository containing `gembrew.yml`, `Formula/`,
-and a Docker Compose environment under `support/`. `build` reads the
-configuration and writes the formula.
-
-The configuration filename is always `gembrew.yml`.
+`init` creates a tap repository containing `README.md`, `gembrew/`, and
+`Formula/`. It accepts an empty directory or an existing tap containing
+`Formula/`. Supplying a gem name also creates its first configuration. The gem
+name is optional, so `gembrew init` can prepare an empty tap or add Gembrew to
+an existing one. An existing `README.md` is never overwritten.
 
 For example, `gembrew init example` generates:
 
+```text
+README.md
+gembrew/
+  example.yml
+Formula/
+```
+
+`gembrew/example.yml` contains:
+
 ```yaml
 gem: example
-output: Formula/example.rb
 
 test: |-
   system bin/"example", "--version"
 ```
 
-Edit `gembrew.yml` as needed, then generate the formula:
+Edit the configuration as needed, then generate `Formula/example.rb`:
 
 ```shell
 gembrew build
 ```
 
-The required settings are `gem`, `output`, and exactly one of `test` or
-`test_from_file`. Relative paths are resolved from `gembrew.yml`.
+Each YAML file under `gembrew/` describes one formula. Add more published gems
+with:
+
+```shell
+gembrew add another-gem
+```
+
+Plain `build` generates every configured formula. Pass a configuration name to
+generate just one:
+
+```shell
+gembrew build example
+```
+
+The required settings are `gem` and exactly one of `test` or `test_from_file`.
+The output defaults to `Formula/NAME.rb`, where `NAME` is the configuration
+filename. Relative paths are resolved from the tap root.
 
 ```yaml
 gem: example
-output: Formula/example.rb
 
 # Optional published gem version. The latest stable version is used by default.
 version: "1.2.3"
@@ -58,6 +79,9 @@ desc: Example command-line application
 homepage: https://example.com
 license: MIT
 executable: example
+
+# Optional output override. The default for gembrew/example.yml is shown here.
+output: Formula/example.rb
 
 test: |-
   system bin/"example", "--version"
@@ -93,9 +117,10 @@ Run the complete workflow non-interactively in one clean container:
 gembrew check
 ```
 
-This rebuilds the formula, then runs Homebrew style, online audit, source
-installation, and the formula test. The generated Compose `check` service can
-also be invoked directly.
+This rebuilds every configured formula, then runs Homebrew style, online audit,
+source installation, and the formula test in disposable Homebrew containers.
+Use `gembrew check example` to check only one formula. Gembrew invokes Docker
+directly; the tap does not need generated container support files.
 
 ## Contributing / Support
 

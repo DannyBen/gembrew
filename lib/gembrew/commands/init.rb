@@ -4,16 +4,18 @@ require 'gembrew/initializer'
 module Gembrew
   module Commands
     class Init < MisterBin::Command
-      help 'Initialize a Homebrew tap repository for a Ruby gem'
+      help 'Initialize a Homebrew tap repository'
 
-      usage 'gembrew init GEM'
+      usage 'gembrew init [GEM]'
       usage 'gembrew init (-h|--help)'
 
-      param 'GEM', 'Published Ruby gem name'
+      param 'GEM', 'Optional published Ruby gem name'
 
       def run
         Initializer.new(args['GEM']).call
-        say "Initialized m`#{Dir.pwd}` for bb`#{args['GEM']}`"
+        message = "Initialized m`#{Dir.pwd}`"
+        message += " for bb`#{args['GEM']}`" if args['GEM']
+        say message
       end
     end
   end

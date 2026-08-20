@@ -1,63 +1,57 @@
 require 'erb'
 require 'fileutils'
 require 'pathname'
+require 'gembrew/adder'
 require 'gembrew/error'
 
 module Gembrew
   class Initializer
-    CONFIG_FILENAME = 'gembrew.yml'
-
     attr_reader :gem_name, :project_path
 
-    def initialize(gem_name, project_path: Pathname.pwd)
+    def initialize(gem_name = nil, project_path: Pathname.pwd)
       @gem_name = gem_name
       @project_path = Pathname(project_path).expand_path
     end
 
     def call
-      raise Error, "Directory is not empty: #{project_path} (found: #{entry_names.join(', ')})" if entries.any?
+      Config.validate_name! gem_name if gem_name
+      validate_project
 
       formula_path.mkpath
-      support_path.mkpath
-      config_path.write render
-      compose_path.write render('compose.yaml.erb')
+      config_directory.mkpath
+      readme_path.write render_readme unless readme_path.exist?
+      Adder.new(gem_name, project_path: project_path).call if gem_name
 
       project_path
     end
 
   private
 
-    def config_path
-      project_path/CONFIG_FILENAME
-    end
-
-    def compose_path
-      support_path/'compose.yaml'
-    end
-
     def formula_path
       project_path/'Formula'
     end
 
-    def support_path
-      project_path/'support'
+    def config_directory
+      project_path/'gembrew'
+    end
+
+    def readme_path
+      project_path/'README.md'
     end
 
     def entries
       @entries ||= project_path.children.reject { |path| path.basename.to_s == '.git' }
     end
 
-    def entry_names
-      entries.map { |path| path.basename.to_s }.sort
+    def validate_project
+      return if entries.empty? || formula_path.directory?
+
+      raise Error, "Directory is not a Homebrew tap: #{project_path} (Formula/ does not exist)"
     end
 
-    def render(filename = 'gembrew.yml.erb')
-      template = asset_path filename
+    def render_readme
+      template = Pathname(__dir__)/'templates/README.md.erb'
       ERB.new(template.read, trim_mode: '-').result(binding)
-    end
-
-    def asset_path(filename)
-      Pathname(__dir__)/'templates'/filename
     end
   end
 end

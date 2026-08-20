@@ -4,7 +4,7 @@ require 'gembrew/resolver'
 
 module Gembrew
   class Generator
-    def initialize(config: Config.new, resolver: Resolver.new, renderer: Renderer.new)
+    def initialize(config:, resolver: Resolver.new, renderer: Renderer.new)
       @config = config
       @resolver = resolver
       @renderer = renderer

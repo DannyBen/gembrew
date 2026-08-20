@@ -1,24 +1,14 @@
-require 'pathname'
+require 'gembrew/docker_runner'
 require 'gembrew/error'
 
 module Gembrew
   class DockerShell
-    COMPOSE_PATH = Pathname('support/compose.yaml')
-
-    attr_reader :project_path
-
-    def initialize(project_path: Pathname.pwd, command_runner: nil)
-      @project_path = Pathname(project_path).expand_path
-      @command_runner = command_runner || method(:run_command)
+    def initialize(runner: DockerRunner.new)
+      @runner = runner
     end
 
     def call
-      raise Error, "Compose file does not exist: #{compose_path}" unless compose_path.file?
-
-      success = command_runner.call(
-        'docker', 'compose', '-f', COMPOSE_PATH.to_s, 'run', '--rm', 'brew',
-        chdir: project_path
-      )
+      success = runner.call 'bash', '--norc', interactive: true
       raise Error, 'Homebrew shell exited with an error' unless success
 
       true
@@ -26,14 +16,6 @@ module Gembrew
 
   private
 
-    attr_reader :command_runner
-
-    def compose_path
-      project_path/COMPOSE_PATH
-    end
-
-    def run_command(*command, chdir:)
-      system(*command, chdir: chdir.to_s)
-    end
+    attr_reader :runner
   end
 end

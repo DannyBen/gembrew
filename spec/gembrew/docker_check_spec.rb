@@ -1,44 +1,29 @@
 require 'spec_helper'
 
 describe Gembrew::DockerCheck do
-  subject { described_class.new project_path: project_path, command_runner: runner }
+  subject { described_class.new runner: runner }
 
-  let(:project_path) { fixture 'compose' }
   let(:runner) { double call: true }
-
-  it 'runs the generated check service without a TTY' do
-    expect(runner).to receive(:call).with(
-      *%w[docker compose -f support/compose.yaml run --rm --no-TTY check],
-      chdir: Pathname(project_path)
+  let(:script_matcher) do
+    a_string_including(
+      "printf '\\n\\033[1;34m==> gembrew: %s\\033[0m\\n'",
+      'caption "styling $formula"', 'brew audit --new --online "$formula"',
+      'brew install --build-from-source "$formula"', 'brew test "$formula"'
     )
-    expect(subject.call).to be true
   end
 
-  context 'without a Compose file' do
-    let(:project_path) { fixture 'missing-compose' }
-
-    it 'requires the generated Compose file' do
-      expect { subject.call }.to raise_error(
-        Gembrew::Error,
-        "Compose file does not exist: #{project_path}/support/compose.yaml"
-      )
-    end
+  it 'runs the complete check sequence with captions' do
+    arguments = []
+    allow(runner).to receive(:call) { |*args| arguments.replace args }
+    expect(subject.call('example')).to be true
+    expect(arguments).to match ['bash', '-euc', script_matcher]
   end
 
   context 'when the check fails' do
     let(:runner) { double call: false }
 
     it 'reports failed checks' do
-      expect { subject.call }.to raise_error(Gembrew::Error, 'Homebrew checks failed')
-    end
-  end
-
-  describe '#run_command' do
-    let(:check) { described_class.allocate }
-
-    it 'streams command output' do
-      allow(check).to receive(:system).with('command', chdir: '/tap').and_return true
-      expect(check.send(:run_command, 'command', chdir: Pathname('/tap'))).to be true
+      expect { subject.call('example') }.to raise_error(Gembrew::Error, 'Homebrew checks failed')
     end
   end
 end

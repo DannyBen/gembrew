@@ -1,7 +1,10 @@
 require 'spec_helper'
 
 describe Gembrew::Config do
-  subject { described_class.new fixture(fixture_name) }
+  subject do
+    project_path = Pathname fixture(fixture_name)
+    described_class.new project_path/'gembrew.yml', project_path: project_path
+  end
 
   context 'with an inline test' do
     let(:fixture_name) { 'inline-test' }
@@ -18,7 +21,7 @@ describe Gembrew::Config do
   context 'with an external test' do
     let(:fixture_name) { 'external-test' }
 
-    it 'loads a test body relative to the configuration file' do
+    it 'loads a test body relative to the tap root' do
       expect(subject.test_body).to eq "assert true\n"
     end
   end
@@ -87,6 +90,27 @@ describe Gembrew::Config do
         Gembrew::Error,
         "Test file does not exist: #{fixture fixture_name}/missing.rb"
       )
+    end
+  end
+
+  describe '.all' do
+    it 'loads every configuration in filename order' do
+      configs = described_class.all fixture('discovery')
+      expect(configs.map(&:name)).to eq %w[bashly completely]
+    end
+
+    it 'requires at least one configuration' do
+      expect { described_class.all fixture('missing-config') }.to raise_error(
+        Gembrew::Error,
+        "No gem configurations found in #{fixture 'missing-config'}/gembrew"
+      )
+    end
+  end
+
+  describe '.find' do
+    it 'loads one named configuration' do
+      config = described_class.find 'bashly', fixture('discovery')
+      expect(config.gem_name).to eq 'bashly'
     end
   end
 end
