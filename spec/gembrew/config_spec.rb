@@ -23,7 +23,7 @@ describe Gembrew::Config do
       expect(config.version).to eq '1.2.3'
       expect(config.output_path.to_s).to eq "#{directory}/Formula/example.rb"
       expect(config.description).to eq 'Example CLI'
-      expect(config.test_body).to eq %(system bin/"example", "--version")
+      expect(config.test_body).to eq %[system bin/"example", "--version"]
     end
   end
 

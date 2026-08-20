@@ -19,4 +19,3 @@ describe Gembrew::CLI do
     expect { runner.run %w[--version] }.to output("#{Gembrew::VERSION}\n").to_stdout
   end
 end
-

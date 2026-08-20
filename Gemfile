@@ -10,4 +10,3 @@ group :development do
 end
 
 gemspec
-

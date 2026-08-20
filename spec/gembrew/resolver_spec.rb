@@ -64,10 +64,10 @@ describe Gembrew::Resolver do
         LOCK
       end
       resolver = described_class.new(
-        cache_root: Pathname(directory)/'cache',
-        reporter: reporter,
+        cache_root:     Pathname(directory)/'cache',
+        reporter:       reporter,
         command_runner: runner,
-        archive_store: archive_store,
+        archive_store:  archive_store
       )
 
       resolution = resolver.resolve 'root', '1.0.0'
@@ -78,7 +78,7 @@ describe Gembrew::Resolver do
         Gembrew::Resource.new(
           'dependency',
           '2.0.0',
-          Digest::SHA256.file(dependency_archive).hexdigest,
+          Digest::SHA256.file(dependency_archive).hexdigest
         ),
       ]
       expect(reporter).to have_received(:collecting).with(1)
@@ -110,9 +110,9 @@ describe Gembrew::Resolver do
            4.0.17
       LOCK
       resolver = described_class.new(
-        cache_root: Pathname(directory)/'cache',
-        reporter: reporter,
-        archive_store: instance_double(Gembrew::ArchiveStore),
+        cache_root:    Pathname(directory)/'cache',
+        reporter:      reporter,
+        archive_store: instance_double(Gembrew::ArchiveStore)
       )
 
       specs = resolver.send :dependency_specs, lockfile, root_spec
@@ -133,10 +133,10 @@ describe Gembrew::Resolver do
         Pathname(command.fetch(command.index('--lockfile') + 1)).write "lock\n"
       end
       resolver = described_class.new(
-        cache_root: Pathname(directory)/'cache',
-        reporter: reporter,
+        cache_root:     Pathname(directory)/'cache',
+        reporter:       reporter,
         command_runner: runner,
-        archive_store: instance_double(Gembrew::ArchiveStore),
+        archive_store:  instance_double(Gembrew::ArchiveStore)
       )
 
       lockfile = resolver.send :lock, root_spec, temporary
@@ -145,7 +145,7 @@ describe Gembrew::Resolver do
       expect(invocation[:chdir]).to eq temporary
       expect(invocation[:env]).to eq(
         'BUNDLE_FORCE_RUBY_PLATFORM' => 'true',
-        'BUNDLE_GEMFILE' => temporary.join('Gemfile').to_s,
+        'BUNDLE_GEMFILE'             => temporary.join('Gemfile').to_s
       )
       expect(lockfile).to be_file
     end
@@ -157,8 +157,8 @@ describe Gembrew::Resolver do
       ENV['XDG_CACHE_HOME'] = directory
 
       resolver = described_class.new(
-        reporter: reporter,
-        archive_store: instance_double(Gembrew::ArchiveStore),
+        reporter:      reporter,
+        archive_store: instance_double(Gembrew::ArchiveStore)
       )
 
       expect(resolver.cache_root).to eq Pathname(directory)/'gembrew'
@@ -170,9 +170,9 @@ describe Gembrew::Resolver do
   describe 'command execution' do
     subject(:resolver) do
       described_class.new(
-        cache_root: Pathname(directory)/'cache',
-        reporter: reporter,
-        archive_store: instance_double(Gembrew::ArchiveStore),
+        cache_root:    Pathname(directory)/'cache',
+        reporter:      reporter,
+        archive_store: instance_double(Gembrew::ArchiveStore)
       )
     end
 

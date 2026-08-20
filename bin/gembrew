@@ -15,4 +15,3 @@ rescue => e
   say! "rib` #{e.class} `\n#{e.message}"
   exit 1
 end
-

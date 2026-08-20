@@ -7,14 +7,14 @@ describe Gembrew::Generator do
       output_path = Pathname(directory)/'Formula/example_cli.rb'
       config = instance_double(
         Gembrew::Config,
-        gem_name: 'example_cli',
-        version: nil,
+        gem_name:    'example_cli',
+        version:     nil,
         output_path: output_path,
         description: nil,
-        homepage: nil,
-        license: nil,
-        executable: nil,
-        test_body: %(system bin/"example", "--version"),
+        homepage:    nil,
+        license:     nil,
+        executable:  nil,
+        test_body:   %[system bin/"example", "--version"]
       )
       spec = Gem::Specification.new do |gem|
         gem.name = 'example_cli'
@@ -27,7 +27,7 @@ describe Gembrew::Generator do
       resolution = Gembrew::Resolution.new(
         spec,
         'root-checksum',
-        [Gembrew::Resource.new('dependency', '2.0.0', 'dependency-checksum')],
+        [Gembrew::Resource.new('dependency', '2.0.0', 'dependency-checksum')]
       )
       resolver = instance_double(Gembrew::Resolver)
       allow(resolver).to receive(:resolve).with('example_cli', nil).and_return(resolution)

@@ -5,4 +5,3 @@ describe Gembrew do
     expect(Gembrew::VERSION).to match(/\A\d+\.\d+\.\d+\z/)
   end
 end
-

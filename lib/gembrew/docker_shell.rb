@@ -17,7 +17,7 @@ module Gembrew
 
       success = command_runner.call(
         'docker', 'compose', '-f', COMPOSE_PATH.to_s, 'run', '--rm', 'brew',
-        chdir: project_path,
+        chdir: project_path
       )
       raise Error, 'Homebrew shell exited with an error' unless success
 

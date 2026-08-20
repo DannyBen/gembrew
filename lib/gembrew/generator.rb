@@ -17,15 +17,15 @@ module Gembrew
       output_path.dirname.mkpath
       output_path.write renderer.render(
         formula_name: formula_name(spec.name),
-        gem_name: spec.name,
-        version: spec.version.to_s,
-        sha256: resolution.sha256,
-        description: config.description || spec.summary,
-        homepage: config.homepage || inferred_homepage(spec),
-        license: config.license || spec.license || spec.licenses.first,
-        executable: config.executable || spec.executables.first || spec.name,
-        resources: resolution.resources,
-        test_body: config.test_body,
+        gem_name:     spec.name,
+        version:      spec.version.to_s,
+        sha256:       resolution.sha256,
+        description:  config.description || spec.summary,
+        homepage:     config.homepage || inferred_homepage(spec),
+        license:      config.license || spec.license || spec.licenses.first,
+        executable:   config.executable || spec.executables.first || spec.name,
+        resources:    resolution.resources,
+        test_body:    config.test_body
       )
       output_path
     end

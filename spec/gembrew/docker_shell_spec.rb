@@ -18,7 +18,7 @@ describe Gembrew::DockerShell do
       expect(result).to be true
       expect(invocation).to eq(
         command: %w[docker compose -f support/compose.yaml run --rm brew],
-        chdir: Pathname(directory),
+        chdir:   Pathname(directory)
       )
     end
   end
@@ -28,7 +28,7 @@ describe Gembrew::DockerShell do
       expect { described_class.new(project_path: directory).call }
         .to raise_error(
           Gembrew::Error,
-          "Compose file does not exist: #{directory}/support/compose.yaml",
+          "Compose file does not exist: #{directory}/support/compose.yaml"
         )
     end
   end

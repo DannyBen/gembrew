@@ -17,9 +17,9 @@ describe Gembrew::Initializer do
       expect(File).to be_directory("#{directory}/support")
       expect(File).to exist("#{directory}/support/compose.yaml")
       expect(config).to eq(
-        'gem' => 'example',
+        'gem'    => 'example',
         'output' => 'Formula/example.rb',
-        'test' => %(system bin/"example", "--version"),
+        'test'   => %[system bin/"example", "--version"]
       )
       expect(File.read("#{directory}/gembrew.yml")).to end_with("\n")
     end
@@ -69,7 +69,7 @@ describe Gembrew::Initializer do
       expect { initialize_project(directory) }
         .to raise_error(
           Gembrew::Error,
-          "Directory is not empty: #{directory} (found: LICENSE, README.md)",
+          "Directory is not empty: #{directory} (found: LICENSE, README.md)"
         )
       expect(Dir.children(directory).sort).to eq %w[LICENSE README.md]
     end

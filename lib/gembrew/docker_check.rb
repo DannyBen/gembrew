@@ -18,7 +18,7 @@ module Gembrew
       success = command_runner.call(
         'docker', 'compose', '-f', COMPOSE_PATH.to_s,
         'run', '--rm', '--no-TTY', 'check',
-        chdir: project_path,
+        chdir: project_path
       )
       raise Error, 'Homebrew checks failed' unless success
 

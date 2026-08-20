@@ -27,4 +27,3 @@ Gem::Specification.new do |s|
     'rubygems_mfa_required' => 'true',
   }
 end
-

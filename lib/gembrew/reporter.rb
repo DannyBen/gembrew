@@ -6,8 +6,8 @@ module Gembrew
 
     LABELS = {
       rubygems_cache: ['g', 'RubyGems cache'],
-      gembrew_cache: ['g', 'Gembrew cache'],
-      downloading: ['y', 'Downloading'],
+      gembrew_cache:  ['g', 'Gembrew cache'],
+      downloading:    %w[y Downloading],
     }.freeze
 
     def archive(state, name, version, index: nil, total: nil)
@@ -30,7 +30,7 @@ module Gembrew
   private
 
     def counter(index, total)
-      format "%#{total.to_s.length}d/%d", index, total
+      "%#{total.to_s.length}d/%d" % [index, total]
     end
 
     def label_width

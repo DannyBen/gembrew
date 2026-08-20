@@ -70,10 +70,10 @@ module Gembrew
         'bundle', 'lock', '--gemfile', gemfile.to_s, '--lockfile', lockfile.to_s,
         '--add-platform', 'ruby',
         chdir: temporary,
-        env: {
+        env:   {
           'BUNDLE_FORCE_RUBY_PLATFORM' => 'true',
-          'BUNDLE_GEMFILE' => gemfile.to_s,
-        },
+          'BUNDLE_GEMFILE'             => gemfile.to_s,
+        }
       )
       lockfile
     end
