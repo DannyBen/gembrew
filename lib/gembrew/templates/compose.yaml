@@ -1,0 +1,12 @@
+services:
+  brew:
+    image: homebrew/brew:main
+    working_dir: /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/gembrew/homebrew-tap
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_INSTALL_FROM_API: "1"
+    volumes:
+      - ..:/home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/gembrew/homebrew-tap
+    stdin_open: true
+    tty: true

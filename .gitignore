@@ -1,0 +1,7 @@
+*.gem
+/.bundle
+/dev
+/Gemfile.lock
+/spec/coverage
+/spec/status.txt
+/tmp

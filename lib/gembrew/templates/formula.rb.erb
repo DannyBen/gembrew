@@ -1,0 +1,34 @@
+class <%= formula_name %> < Formula
+  desc <%= description.inspect %>
+  homepage <%= homepage.inspect %>
+  url "https://rubygems.org/downloads/<%= gem_name %>-<%= version %>.gem"
+  sha256 "<%= sha256 %>"
+  license <%= license.inspect %>
+
+  depends_on "ruby"
+<% resources.each do |resource| -%>
+
+  resource <%= resource.name.inspect %> do
+    url "https://rubygems.org/downloads/<%= resource.name %>-<%= resource.version %>.gem"
+    sha256 "<%= resource.sha256 %>"
+  end
+<% end -%>
+
+  def install
+    ENV["GEM_HOME"] = libexec
+
+    resources.each do |resource|
+      system "gem", "install", resource.cached_download,
+        "--ignore-dependencies", "--install-dir", libexec, "--no-document"
+    end
+
+    system "gem", "install", cached_download,
+      "--ignore-dependencies", "--install-dir", libexec, "--no-document"
+
+    (bin/<%= executable.inspect %>).write_env_script libexec/"bin/<%= executable %>", GEM_HOME: ENV.fetch("GEM_HOME")
+  end
+
+  test do
+<%= test_body.lines.map { |line| "    #{line}" }.join %>
+  end
+end

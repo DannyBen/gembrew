@@ -1,0 +1,13 @@
+Initialize a Homebrew tap repository for a Ruby gem
+
+Usage:
+  gembrew init GEM
+  gembrew init (-h|--help)
+
+Options:
+  -h --help
+    Show this help
+
+Parameters:
+  GEM
+    Published Ruby gem name

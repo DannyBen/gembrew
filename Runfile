@@ -1,0 +1,8 @@
+require 'gembrew/version'
+
+title   "Gembrew Developer Toolbelt"
+summary "Runfile tasks for building the Gembrew gem"
+version Gembrew::VERSION
+
+import_gem 'runfile-tasks/gem', gemname: 'gembrew'
+

@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+require 'gembrew'
+require 'gembrew/cli'
+require 'colsole'
+
+include Colsole
+
+runner = Gembrew::CLI.runner
+
+begin
+  exit runner.run ARGV
+rescue => e
+  puts e.backtrace.reverse if ENV['DEBUG']
+  say! "rib` #{e.class} `\n#{e.message}"
+  exit 1
+end
+

@@ -1,0 +1,15 @@
+gem: <%= gem_name %>
+output: Formula/<%= gem_name %>.rb
+
+test: |-
+  system bin/"<%= gem_name %>", "--version"
+
+# Optional overrides:
+# version: "1.2.3"
+# desc: Example command-line application
+# homepage: https://example.com
+# license: MIT
+# executable: <%= gem_name %>
+
+# To load the Homebrew test body from a Ruby file, replace `test` above with:
+# test_from_file: support/test.rb

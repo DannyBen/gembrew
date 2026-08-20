@@ -1,0 +1,7 @@
+Gembrew - Homebrew Formula Generator for Ruby Gems
+
+Commands:
+  init   Initialize a Homebrew tap repository for a Ruby gem
+  build  Generate a Homebrew formula from gembrew.yml
+
+Run gembrew COMMAND --help for more information
