@@ -10,6 +10,7 @@ describe Gembrew::Generator do
     instance_double Gembrew::Config,
       gem_name: 'example_cli', version: nil, output_path: output_path,
       description: nil, homepage: nil, license: nil, executable: nil,
+      repository: 'https://github.com/bashly-framework/homebrew-tap',
       test_body: %[system bin/"example", "--version"]
   end
   let(:resolution) do
@@ -36,5 +37,11 @@ describe Gembrew::Generator do
   it 'renders a complete formula using inferred metadata and resolved resources' do
     expect(subject.call).to eq output_path
     expect(output_path.read).to match_approval('generator/formula')
+  end
+
+  it 'omits the header when no repository is configured' do
+    allow(config).to receive(:repository).and_return nil
+    subject.call
+    expect(output_path.read).to start_with "class ExampleCli < Formula\n"
   end
 end

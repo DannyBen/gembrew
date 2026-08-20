@@ -12,9 +12,26 @@ describe Gembrew::Config do
     it 'loads values and resolves paths from the configuration directory' do
       expect(subject.gem_name).to eq 'bashly'
       expect(subject.version).to be_nil
+      expect(subject.repository).to eq 'https://github.com/bashly-framework/homebrew-tap'
       expect(subject.output_path.to_s).to eq "#{fixture 'inline-test'}/Formula/bashly.rb"
       expect(subject.description).to eq 'Bashly CLI'
       expect(subject.test_body).to eq %[system bin/"bashly", "--version"]
+    end
+  end
+
+  context 'with an HTTPS repository URL' do
+    let(:fixture_name) { 'external-test' }
+
+    before do
+      allow(YAML).to receive(:safe_load_file).and_return(
+        'gem' => 'bashly',
+        'repository' => 'https://git.example.com/tools/homebrew-tap',
+        'test' => 'assert true'
+      )
+    end
+
+    it 'uses the URL unchanged' do
+      expect(subject.repository).to eq 'https://git.example.com/tools/homebrew-tap'
     end
   end
 

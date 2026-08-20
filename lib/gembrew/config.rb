@@ -6,7 +6,7 @@ module Gembrew
   class Config
     DIRECTORY = 'gembrew'
     ALLOWED_KEYS = %w[
-      gem version output desc homepage license executable test test_from_file
+      gem version repository output desc homepage license executable test test_from_file
     ].freeze
 
     attr_reader :path, :project_path
@@ -41,6 +41,13 @@ module Gembrew
     def name = path.basename('.yml').to_s
     def gem_name = data.fetch('gem').to_s
     def version = data['version']&.to_s
+    def repository
+      value = data['repository']&.to_s
+      return if value.nil? || value.empty?
+      return value if value.start_with?('https://')
+
+      "https://github.com/#{value}"
+    end
     def output_path = (project_path/(data['output'] || "Formula/#{name}.rb")).expand_path
     def description = data['desc']
     def homepage = data['homepage']
@@ -77,6 +84,7 @@ module Gembrew
       raise Error, "Unknown configuration keys: #{unknown_keys.join(', ')}" if unknown_keys.any?
 
       require_value 'gem'
+      validate_repository
 
       return unless data.has_key?('test') == data.has_key?('test_from_file')
 
@@ -86,6 +94,14 @@ module Gembrew
     def require_value(key)
       value = data[key]
       raise Error, "#{key} is required" if value.nil? || value.to_s.empty?
+    end
+
+    def validate_repository
+      return unless data.has_key?('repository')
+
+      value = data['repository'].to_s
+      valid = value.match?(%r{\Ahttps://\S+\z}) || value.match?(%r{\A[^/\s]+/[^/\s]+\z})
+      raise Error, 'repository must be an HTTPS URL or owner/repository' unless valid
     end
   end
 end

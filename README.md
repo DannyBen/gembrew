@@ -74,6 +74,10 @@ gem: example
 # Optional published gem version. The latest stable version is used by default.
 version: "1.2.3"
 
+# Optional repository shown in the generated formula header. An owner/repository
+# value refers to GitHub; an HTTPS URL is used unchanged.
+repository: owner/homebrew-tap
+
 # Optional gem metadata overrides:
 desc: Example command-line application
 homepage: https://example.com
