@@ -20,7 +20,7 @@ module Gembrew
       formula_path.mkpath
       support_path.mkpath
       config_path.write render
-      FileUtils.cp asset_path('compose.yaml'), compose_path
+      compose_path.write render('compose.yaml.erb')
 
       project_path
     end
@@ -51,8 +51,8 @@ module Gembrew
       entries.map { |path| path.basename.to_s }.sort
     end
 
-    def render
-      template = asset_path 'gembrew.yml.erb'
+    def render(filename = 'gembrew.yml.erb')
+      template = asset_path filename
       ERB.new(template.read, trim_mode: '-').result(binding)
     end
 

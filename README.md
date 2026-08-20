@@ -9,6 +9,7 @@ mkdir homebrew-tap
 cd homebrew-tap
 gembrew init GEM
 gembrew build
+gembrew check
 ```
 
 `init` requires an empty directory, with the exception of Git's `.git`
@@ -77,5 +78,15 @@ brew audit --new --online example
 brew install --build-from-source example
 brew test example
 ```
+
+Run the complete workflow non-interactively in one clean container:
+
+```shell
+gembrew check
+```
+
+This rebuilds the formula, then runs Homebrew style, online audit, source
+installation, and the formula test. The generated Compose `check` service can
+also be invoked directly.
 
 Gembrew is currently under development.

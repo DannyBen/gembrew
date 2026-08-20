@@ -1,5 +1,6 @@
 require 'mister_bin'
 require 'gembrew/commands/build'
+require 'gembrew/commands/check'
 require 'gembrew/commands/init'
 require 'gembrew/commands/shell'
 require 'gembrew/version'
@@ -13,6 +14,7 @@ module Gembrew
 
       runner.route 'init',  to: Commands::Init
       runner.route 'build', to: Commands::Build
+      runner.route 'check', to: Commands::Check
       runner.route 'shell', to: Commands::Shell
 
       runner

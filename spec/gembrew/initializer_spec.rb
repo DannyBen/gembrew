@@ -28,17 +28,26 @@ describe Gembrew::Initializer do
   it 'creates a Homebrew Docker Compose environment' do
     Dir.mktmpdir do |directory|
       initialize_project(directory)
-      compose = YAML.safe_load_file "#{directory}/support/compose.yaml"
+      compose = YAML.safe_load_file "#{directory}/support/compose.yaml", aliases: true
       service = compose.fetch('services').fetch('brew')
+      check = compose.fetch('services').fetch('check')
 
       expect(service['image']).to eq 'homebrew/brew:main'
       expect(service['working_dir']).to eq '/work'
       expect(service['environment']['PS1']).to eq "\n\nbrew $ "
+      expect(service['environment']['GEMBREW_GEM']).to eq 'example'
       expect(service['volumes']).to eq [
         '..:/work',
         '..:/home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/gembrew/homebrew-tap',
       ]
       expect(service['command']).to eq %w[bash --norc]
+      expect(check['image']).to eq 'homebrew/brew:main'
+      expect(check['command'].first(2)).to eq %w[bash -euc]
+      expect(check['command'].last).to include(
+        'brew install --build-from-source "$${GEMBREW_GEM}"'
+      )
+      expect(check['stdin_open']).to be false
+      expect(check['tty']).to be false
     end
   end
 
