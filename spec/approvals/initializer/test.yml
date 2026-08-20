@@ -1,0 +1,64 @@
+name: Test Formulae
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@fd832223f9f99ebf0244dd20658680e5d4aca049 # 2026.08.03.2
+
+      - name: Cache Homebrew Bundler gems
+        id: cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
+          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+          restore-keys: ${{ runner.os }}-rubygems-
+
+      - name: Install Homebrew Bundler gems
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: brew install-bundler-gems
+
+      - name: Test formulae
+        shell: bash
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s nullglob
+          formulae=(Formula/*.rb)
+
+          if (( ${#formulae[@]} == 0 )); then
+            echo "No formulae found in Formula/"
+            exit 1
+          fi
+
+          for formula in "${formulae[@]}"; do
+            formula_name="${formula##*/}"
+            formula_name="${formula_name%.rb}"
+
+            brew style "$formula"
+            brew audit --new --online "$formula_name"
+            brew install --build-from-source "$formula_name"
+            brew test "$formula_name"
+            brew uninstall "$formula_name"
+          done
