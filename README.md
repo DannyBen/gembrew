@@ -2,6 +2,12 @@
 
 Generate conventional Homebrew formulae for published Ruby command-line gems.
 
+## Install
+
+```shell
+gem install gembrew
+```
+
 ## Usage
 
 ```shell
@@ -89,4 +95,11 @@ This rebuilds the formula, then runs Homebrew style, online audit, source
 installation, and the formula test. The generated Compose `check` service can
 also be invoked directly.
 
-Gembrew is currently under development.
+## Contributing / Support
+
+If you experience any issue, have a question or a suggestion, or if you wish
+to contribute, feel free to [open an issue][issues].
+
+---
+
+[issues]: https://github.com/DannyBen/gembrew/issues
