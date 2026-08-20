@@ -1,12 +1,15 @@
 services:
   brew:
     image: homebrew/brew:main
-    working_dir: /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/gembrew/homebrew-tap
+    working_dir: /work
     environment:
       HOMEBREW_NO_AUTO_UPDATE: "1"
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
       HOMEBREW_NO_INSTALL_FROM_API: "1"
+      PS1: "\n\nbrew $ "
     volumes:
+      - ..:/work
       - ..:/home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/gembrew/homebrew-tap
+    command: ["bash", "--norc"]
     stdin_open: true
     tty: true

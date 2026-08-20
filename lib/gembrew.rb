@@ -1,5 +1,6 @@
 require 'gembrew/archive_store'
 require 'gembrew/config'
+require 'gembrew/docker_shell'
 require 'gembrew/error'
 require 'gembrew/generator'
 require 'gembrew/initializer'

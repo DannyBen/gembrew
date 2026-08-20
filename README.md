@@ -65,7 +65,7 @@ from RubyGems' local cache when available. Downloaded archives are retained in
 Open the generated Homebrew environment with:
 
 ```shell
-docker compose -f support/compose.yaml run --rm brew
+gembrew shell
 ```
 
 The repository is mounted as a local tap, so formulae can be addressed by gem

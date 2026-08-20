@@ -32,10 +32,13 @@ describe Gembrew::Initializer do
       service = compose.fetch('services').fetch('brew')
 
       expect(service['image']).to eq 'homebrew/brew:main'
-      expect(service['working_dir']).to end_with '/Taps/gembrew/homebrew-tap'
+      expect(service['working_dir']).to eq '/work'
+      expect(service['environment']['PS1']).to eq "\n\nbrew $ "
       expect(service['volumes']).to eq [
+        '..:/work',
         '..:/home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/gembrew/homebrew-tap',
       ]
+      expect(service['command']).to eq %w[bash --norc]
     end
   end
 
