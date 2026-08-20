@@ -1,5 +1,7 @@
 # Gembrew
 
+![repocard](https://repocard.dannyben.com/svg/gembrew.svg)
+
 Generate conventional Homebrew formulae for published Ruby command-line gems.
 
 ## Install
