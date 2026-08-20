@@ -8,6 +8,7 @@ class ExampleCli < Formula
   sha256 "root-checksum"
   license "MIT"
 
+  depends_on "bash"
   depends_on "ruby"
 
   resource "dependency" do

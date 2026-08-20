@@ -20,16 +20,21 @@ gembrew build
 gembrew check
 ```
 
-`init` creates a tap repository containing `README.md`, `gembrew/`, and
-`Formula/`. It accepts an empty directory or an existing tap containing
-`Formula/`. Supplying a gem name also creates its first configuration. The gem
-name is optional, so `gembrew init` can prepare an empty tap or add Gembrew to
-an existing one. An existing `README.md` is never overwritten.
+`init` creates a tap repository containing `README.md`, `gembrew/`, `Formula/`,
+and a GitHub Actions workflow that styles, audits, installs, and tests every
+formula on Linux and macOS. It accepts an empty directory or an existing tap
+containing `Formula/`.
+Supplying a gem name also creates its first configuration. The gem name is
+optional, so `gembrew init` can prepare an empty tap or add Gembrew to an
+existing one. Existing README and workflow files are never overwritten.
 
 For example, `gembrew init example` generates:
 
 ```text
 README.md
+.github/
+  workflows/
+    test.yml
 gembrew/
   example.yml
 Formula/
@@ -83,6 +88,10 @@ desc: Example command-line application
 homepage: https://example.com
 license: MIT
 executable: example
+
+# Optional additional Homebrew formula dependencies:
+dependencies:
+  - bash
 
 # Optional output override. The default for gembrew/example.yml is shown here.
 output: Formula/example.rb

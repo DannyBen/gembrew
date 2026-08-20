@@ -10,7 +10,9 @@ class <%= formula_name %> < Formula
   sha256 "<%= sha256 %>"
   license <%= license.inspect %>
 
-  depends_on "ruby"
+<% dependencies.each do |dependency| -%>
+  depends_on <%= dependency.inspect %>
+<% end -%>
 <% resources.each do |resource| -%>
 
   resource <%= resource.name.inspect %> do

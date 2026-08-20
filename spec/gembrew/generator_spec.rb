@@ -11,6 +11,7 @@ describe Gembrew::Generator do
       gem_name: 'example_cli', version: nil, output_path: output_path,
       description: nil, homepage: nil, license: nil, executable: nil,
       repository: 'https://github.com/bashly-framework/homebrew-tap',
+      dependencies: ['bash'],
       test_body: %[system bin/"example", "--version"]
   end
   let(:resolution) do

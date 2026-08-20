@@ -13,6 +13,7 @@ describe Gembrew::Initializer do
     expect(directory/'Formula').to be_directory
     expect((directory/'gembrew/example.yml').read).to match_approval('initializer/gembrew.yml')
     expect((directory/'README.md').read).to match_approval('initializer/README.md')
+    expect((directory/'.github/workflows/test.yml').read).to match_approval('initializer/test.yml')
     expect(directory/'support').not_to exist
   end
 
@@ -41,6 +42,14 @@ describe Gembrew::Initializer do
     it 'does not overwrite its README' do
       expect { subject }.not_to(change { (directory/'README.md').read })
     end
+
+    it 'does not overwrite its test workflow' do
+      workflow = directory/'.github/workflows/test.yml'
+      workflow.dirname.mkpath
+      workflow.write "name: Existing workflow\n"
+
+      expect { subject }.not_to(change { workflow.read })
+    end
   end
 
   context 'with a non-tap directory' do
@@ -58,6 +67,7 @@ describe Gembrew::Initializer do
       expect(subject).to eq directory
       expect(directory/'Formula').to be_directory
       expect(directory/'gembrew').to be_directory
+      expect(directory/'.github/workflows/test.yml').to be_file
       expect((directory/'gembrew').children).to be_empty
       expect((directory/'README.md').read).to include('brew install FORMULA')
     end

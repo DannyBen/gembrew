@@ -20,6 +20,8 @@ module Gembrew
       formula_path.mkpath
       config_directory.mkpath
       readme_path.write render_readme unless readme_path.exist?
+      workflow_path.dirname.mkpath
+      workflow_path.write workflow_template.read unless workflow_path.exist?
       Adder.new(gem_name, project_path: project_path).call if gem_name
 
       project_path
@@ -37,6 +39,14 @@ module Gembrew
 
     def readme_path
       project_path/'README.md'
+    end
+
+    def workflow_path
+      project_path/'.github/workflows/test.yml'
+    end
+
+    def workflow_template
+      Pathname(__dir__)/'templates/test.yml'
     end
 
     def entries

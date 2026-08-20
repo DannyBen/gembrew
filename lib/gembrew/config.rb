@@ -6,7 +6,7 @@ module Gembrew
   class Config
     DIRECTORY = 'gembrew'
     ALLOWED_KEYS = %w[
-      gem version repository output desc homepage license executable test test_from_file
+      gem version repository output desc homepage license executable dependencies test test_from_file
     ].freeze
 
     attr_reader :path, :project_path
@@ -53,6 +53,7 @@ module Gembrew
     def homepage = data['homepage']
     def license = data['license']
     def executable = data['executable']
+    def dependencies = data.fetch('dependencies', [])
 
     def test_body
       @test_body ||= if data.has_key?('test')
@@ -85,6 +86,7 @@ module Gembrew
 
       require_value 'gem'
       validate_repository
+      validate_dependencies
 
       return unless data.has_key?('test') == data.has_key?('test_from_file')
 
@@ -102,6 +104,15 @@ module Gembrew
       value = data['repository'].to_s
       valid = value.match?(%r{\Ahttps://\S+\z}) || value.match?(%r{\A[^/\s]+/[^/\s]+\z})
       raise Error, 'repository must be an HTTPS URL or owner/repository' unless valid
+    end
+
+    def validate_dependencies
+      return unless data.has_key?('dependencies')
+
+      dependencies = data['dependencies']
+      valid = dependencies.is_a?(Array) &&
+        dependencies.all? { |dependency| dependency.is_a?(String) && !dependency.empty? }
+      raise Error, 'dependencies must be a sequence of names' unless valid
     end
   end
 end

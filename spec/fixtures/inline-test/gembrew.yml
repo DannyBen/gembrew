@@ -2,5 +2,7 @@ gem: bashly
 repository: bashly-framework/homebrew-tap
 output: Formula/bashly.rb
 desc: Bashly CLI
+dependencies:
+  - bash
 test: |-
   system bin/"bashly", "--version"

@@ -10,6 +10,8 @@ test: |-
 # homepage: https://example.com
 # license: MIT
 # executable: example
+# dependencies:
+#   - bash
 
 # To load the Homebrew test body from a Ruby file, replace `test` above with:
 # test_from_file: support/test.rb

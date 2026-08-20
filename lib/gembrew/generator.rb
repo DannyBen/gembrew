@@ -40,6 +40,7 @@ module Gembrew
         license:     config.license || spec.license || spec.licenses.first,
         executable:  config.executable || spec.executables.first || spec.name,
         repository:  config.repository,
+        dependencies: (config.dependencies + ['ruby']).uniq,
         test_body:   config.test_body,
       }
     end

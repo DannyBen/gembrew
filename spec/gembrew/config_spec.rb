@@ -15,6 +15,7 @@ describe Gembrew::Config do
       expect(subject.repository).to eq 'https://github.com/bashly-framework/homebrew-tap'
       expect(subject.output_path.to_s).to eq "#{fixture 'inline-test'}/Formula/bashly.rb"
       expect(subject.description).to eq 'Bashly CLI'
+      expect(subject.dependencies).to eq ['bash']
       expect(subject.test_body).to eq %[system bin/"bashly", "--version"]
     end
   end
@@ -32,6 +33,23 @@ describe Gembrew::Config do
 
     it 'uses the URL unchanged' do
       expect(subject.repository).to eq 'https://git.example.com/tools/homebrew-tap'
+    end
+  end
+
+  context 'with invalid dependencies' do
+    let(:fixture_name) { 'external-test' }
+
+    before do
+      allow(YAML).to receive(:safe_load_file).and_return(
+        'gem' => 'bashly',
+        'dependencies' => 'bash',
+        'test' => 'assert true'
+      )
+    end
+
+    it 'requires a sequence of dependency names' do
+      expect { subject }
+        .to raise_error(Gembrew::Error, 'dependencies must be a sequence of names')
     end
   end
 
