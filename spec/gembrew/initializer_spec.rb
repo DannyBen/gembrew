@@ -33,12 +33,23 @@ describe Gembrew::Initializer do
     expect(workflow).to match_approval('initializer/test.yml')
   end
 
-  it 'tests and uninstalls each formula in the workflow' do
+  it 'tests changed formulae on pull requests with Homebrew test-bot' do
     subject
     workflow = (directory/'.github/workflows/test.yml').read
-    expect(workflow).to match(
-      /brew test "\$formula_name"\n\s+brew linkage --test "\$formula_name"\n\s+brew uninstall "\$formula_name"/
-    )
+    expect(workflow).to include("if: github.event_name == 'pull_request'\n        run: brew test-bot --only-formulae")
+  end
+
+  it 'tests all formulae outside pull requests' do
+    subject
+    workflow = (directory/'.github/workflows/test.yml').read
+    expect(workflow).to include('tap_path="${{ steps.set-up-homebrew.outputs.repository-path }}"')
+    expect(workflow).to include('--testing-formulae="${{ steps.all-formulae.outputs.formulae }}"')
+  end
+
+  it 'tests formulae on Linux, Apple Silicon, and Intel macOS' do
+    subject
+    workflow = (directory/'.github/workflows/test.yml').read
+    expect(workflow).to include('ubuntu-latest', 'macos-26', 'macos-15-intel')
   end
 
   it 'does not create a support directory' do

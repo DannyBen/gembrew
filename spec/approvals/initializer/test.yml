@@ -6,60 +6,97 @@ on:
       - main
       - master
   pull_request:
+  schedule:
+    - cron: "17 4 * * 6"
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
+
+defaults:
+  run:
+    shell: bash -xeuo pipefail {0}
 
 jobs:
-  test:
+  test-bot:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    container: ${{ fromJSON(toJSON(matrix.container)) }} # zizmor: ignore[unpinned-images]
     strategy:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
+          - macos-26
+          - macos-15-intel
+        include:
+          - os: ubuntu-latest
+            container:
+              image: ghcr.io/homebrew/brew:main
+              options: --privileged
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      pull-requests: read
 
     steps:
       - name: Set up Homebrew
         id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@fd832223f9f99ebf0244dd20658680e5d4aca049 # 2026.08.03.2
+        uses: Homebrew/actions/setup-homebrew@b35a29a0f83ee8b8ca07b219fc8db3d7bb88ab49 # 2026.08.10.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Homebrew Bundler gems
-        id: cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ runner.os }}-rubygems-
+          key: ${{ matrix.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+          restore-keys: ${{ matrix.os }}-rubygems-
 
-      - name: Install Homebrew Bundler gems
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: brew install-bundler-gems
+      - name: Clean runner
+        run: brew test-bot --only-cleanup-before
 
-      - name: Test formulae
-        shell: bash
-        env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up test-bot
+        run: brew test-bot --only-setup
+
+      - name: Check tap syntax
+        run: brew test-bot --only-tap-syntax
+
+      - name: Test changed formulae
+        if: github.event_name == 'pull_request'
+        run: brew test-bot --only-formulae
+
+      - name: Collect all formulae
+        id: all-formulae
+        if: github.event_name != 'pull_request'
         run: |
           shopt -s nullglob
-          formulae=(Formula/*.rb)
+          tap_path="${{ steps.set-up-homebrew.outputs.repository-path }}"
+          paths=("$tap_path"/Formula/*.rb)
 
-          if (( ${#formulae[@]} == 0 )); then
-            echo "No formulae found in Formula/"
+          if (( ${#paths[@]} == 0 )); then
+            echo "No formulae found in $tap_path/Formula/"
             exit 1
           fi
 
-          for formula in "${formulae[@]}"; do
-            formula_name="${formula##*/}"
-            formula_name="${formula_name%.rb}"
-
-            brew style "$formula"
-            brew audit --new --online "$formula_name"
-            brew install --build-from-source "$formula_name"
-            brew test "$formula_name"
-            brew linkage --test "$formula_name"
-            brew uninstall "$formula_name"
+          formulae=()
+          for path in "${paths[@]}"; do
+            formula="${path##*/}"
+            formulae+=("${formula%.rb}")
           done
+
+          joined=$(IFS=,; echo "${formulae[*]}")
+          echo "formulae=${joined}" >> "$GITHUB_OUTPUT"
+
+      - name: Test all formulae
+        if: github.event_name != 'pull_request'
+        run: >-
+          brew test-bot --only-formulae
+          --testing-formulae="${{ steps.all-formulae.outputs.formulae }}"
+
+      - name: Upload bottles as artifacts
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bottles_${{ matrix.os }}
+          path: "*.bottle.*"
