@@ -105,9 +105,9 @@ module Gembrew
       raise Error, "Unknown source keys: #{unknown_keys.join(', ')}" if unknown_keys.any?
 
       type = source['type']&.to_s
-      raise Error, 'source.type must be github or gem' unless %w[github gem].include? type
+      raise Error, 'source.type must be github or rubygems' unless %w[github rubygems].include? type
 
-      if type == 'gem'
+      if type == 'rubygems'
         extra_keys = source.keys - ['type']
         raise Error, "source.#{extra_keys.first} is only valid for GitHub sources" if extra_keys.any?
         return

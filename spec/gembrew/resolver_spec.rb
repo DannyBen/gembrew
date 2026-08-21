@@ -9,7 +9,7 @@ describe Gembrew::Resolver do
   end
 
   context 'when resolving a gem' do
-    subject { resolver.resolve 'root', '1.0.0', source: { 'type' => 'gem' } }
+    subject { resolver.resolve 'root', '1.0.0', source: { 'type' => 'rubygems' } }
 
     let(:directory) { Pathname Dir.mktmpdir }
     let(:archives) do

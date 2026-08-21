@@ -78,7 +78,7 @@ filename. Relative paths are resolved from the tap root.
 gem: example
 version: "1.2.3"
 source:
-  type: gem
+  type: rubygems
 
 # Optional gem metadata overrides:
 desc: Example command-line application

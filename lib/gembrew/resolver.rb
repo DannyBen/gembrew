@@ -54,7 +54,7 @@ module Gembrew
     end
 
     def root_source(name, version, source_config, temporary)
-      if source_config.fetch('type') == 'gem'
+      if source_config.fetch('type') == 'rubygems'
         archive = archive_store.fetch(name, version, temporary)
         return [archive, Gem::Package.new(archive.to_s).spec]
       end

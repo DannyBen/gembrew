@@ -43,13 +43,31 @@ describe Gembrew::Config do
     end
   end
 
+  context 'with an invalid source type' do
+    let(:fixture_name) { 'external-test' }
+
+    before do
+      allow(YAML).to receive(:safe_load_file).and_return(
+        'gem' => 'bashly',
+        'version' => '1.4.0',
+        'source' => { 'type' => 'gem' },
+        'test' => 'assert true'
+      )
+    end
+
+    it 'requires GitHub or RubyGems' do
+      expect { subject }
+        .to raise_error(Gembrew::Error, 'source.type must be github or rubygems')
+    end
+  end
+
   context 'without a version' do
     let(:fixture_name) { 'external-test' }
 
     before do
       allow(YAML).to receive(:safe_load_file).and_return(
         'gem' => 'bashly',
-        'source' => { 'type' => 'gem' },
+        'source' => { 'type' => 'rubygems' },
         'test' => 'assert true'
       )
     end
@@ -66,7 +84,7 @@ describe Gembrew::Config do
       allow(YAML).to receive(:safe_load_file).and_return(
         'gem' => 'bashly',
         'version' => '1.4.0',
-        'source' => { 'type' => 'gem' },
+        'source' => { 'type' => 'rubygems' },
         'dependencies' => 'bash',
         'test' => 'assert true'
       )

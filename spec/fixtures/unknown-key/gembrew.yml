@@ -1,7 +1,7 @@
 gem: example
 version: "1.2.3"
 source:
-  type: gem
+  type: rubygems
 output: Formula/example.rb
 test: test
 unknown: true
