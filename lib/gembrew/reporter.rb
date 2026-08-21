@@ -7,6 +7,7 @@ module Gembrew
     LABELS = {
       rubygems_cache: ['g', 'RubyGems cache'],
       gembrew_cache:  ['g', 'Gembrew cache'],
+      github_cache:   ['g', 'GitHub cache'],
       downloading:    %w[y Downloading],
     }.freeze
 

@@ -1,12 +1,11 @@
-<% if repository -%>
-# Generated with Gembrew:
-# <%= repository %>
-
-<% end -%>
 class <%= formula_name %> < Formula
   desc <%= description.inspect %>
   homepage <%= homepage.inspect %>
+<% if source_type == 'github' -%>
+  url "https://github.com/<%= source_repo %>/archive/refs/tags/<%= source_tag %>.tar.gz"
+<% else -%>
   url "https://rubygems.org/downloads/<%= gem_name %>-<%= version %>.gem"
+<% end -%>
   sha256 "<%= sha256 %>"
   license <%= license.inspect %>
 
@@ -29,8 +28,14 @@ class <%= formula_name %> < Formula
         "--ignore-dependencies", "--install-dir", libexec, "--no-document"
     end
 
+<% if source_type == 'github' -%>
+    system "gem", "build", "<%= source_gemspec %>"
+    system "gem", "install", "--ignore-dependencies", "<%= gem_name %>-#{version}.gem",
+      "--install-dir", libexec, "--no-document"
+<% else -%>
     system "gem", "install", cached_download,
       "--ignore-dependencies", "--install-dir", libexec, "--no-document"
+<% end -%>
 
     (bin/<%= executable.inspect %>).write_env_script libexec/"bin/<%= executable %>", GEM_HOME: ENV.fetch("GEM_HOME")
   end

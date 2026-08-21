@@ -1,5 +1,8 @@
 gem: bashly
-repository: bashly-framework/homebrew-tap
+version: "1.4.0"
+source:
+  type: github
+  repo: bashly-framework/bashly
 output: Formula/bashly.rb
 desc: Bashly CLI
 dependencies:

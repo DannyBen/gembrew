@@ -69,19 +69,16 @@ generate just one:
 gembrew build example
 ```
 
-The required settings are `gem` and exactly one of `test` or `test_from_file`.
+The required settings are `gem`, `version`, `source`, and exactly one of `test`
+or `test_from_file`.
 The output defaults to `Formula/NAME.rb`, where `NAME` is the configuration
 filename. Relative paths are resolved from the tap root.
 
 ```yaml
 gem: example
-
-# Optional published gem version. The latest stable version is used by default.
 version: "1.2.3"
-
-# Optional repository shown in the generated formula header. An owner/repository
-# value refers to GitHub; an HTTPS URL is used unchanged.
-repository: owner/homebrew-tap
+source:
+  type: gem
 
 # Optional gem metadata overrides:
 desc: Example command-line application
@@ -102,6 +99,20 @@ test: |-
 # Use this instead of `test` to load the test body from another file:
 # test_from_file: support/test.rb
 ```
+
+To build the root gem from a GitHub tag while continuing to fetch its
+dependencies from RubyGems, use:
+
+```yaml
+source:
+  type: github
+  repo: owner/repository
+  # tag: v1.2.3
+  # gemspec: example.gemspec
+```
+
+The tag defaults to `vVERSION`; the gemspec path defaults to
+`GEMNAME.gemspec`.
 
 Gembrew resolves the generic Ruby dependency graph and generates a Homebrew
 `resource` for every runtime dependency. Original `.gem` archives are reused

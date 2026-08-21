@@ -1,10 +1,7 @@
-# Generated with Gembrew:
-# https://github.com/bashly-framework/homebrew-tap
-
 class ExampleCli < Formula
   desc "Example CLI"
   homepage "https://example.com"
-  url "https://rubygems.org/downloads/example_cli-1.2.3.gem"
+  url "https://github.com/bashly-framework/bashly/archive/refs/tags/v1.2.3.tar.gz"
   sha256 "root-checksum"
   license "MIT"
 
@@ -24,8 +21,9 @@ class ExampleCli < Formula
         "--ignore-dependencies", "--install-dir", libexec, "--no-document"
     end
 
-    system "gem", "install", cached_download,
-      "--ignore-dependencies", "--install-dir", libexec, "--no-document"
+    system "gem", "build", "example_cli.gemspec"
+    system "gem", "install", "--ignore-dependencies", "example_cli-#{version}.gem",
+      "--install-dir", libexec, "--no-document"
 
     (bin/"example").write_env_script libexec/"bin/example", GEM_HOME: ENV.fetch("GEM_HOME")
   end

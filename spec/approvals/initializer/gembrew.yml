@@ -1,15 +1,26 @@
 gem: example
+version: "" # required
+
+# Required source. Use the published RubyGem:
+source:
+  type: gem
+
+# Or replace the source above with a GitHub tag archive:
+# source:
+#   type: github
+#   repo: owner/repository          # required for GitHub
+#   tag: v1.2.3                    # optional; defaults to vVERSION
+#   gemspec: example.gemspec  # optional; defaults to GEMNAME.gemspec
 
 test: |-
   system bin/"example", "--version"
 
-# Optional overrides:
-# repository: owner/homebrew-tap
-# version: "1.2.3"
+# Optional metadata and formula overrides:
 # desc: Example command-line application
 # homepage: https://example.com
 # license: MIT
 # executable: example
+# output: Formula/example.rb
 # dependencies:
 #   - bash
 

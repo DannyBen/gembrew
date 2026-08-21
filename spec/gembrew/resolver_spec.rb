@@ -9,7 +9,7 @@ describe Gembrew::Resolver do
   end
 
   context 'when resolving a gem' do
-    subject { resolver.resolve 'root', '1.0.0' }
+    subject { resolver.resolve 'root', '1.0.0', source: { 'type' => 'gem' } }
 
     let(:directory) { Pathname Dir.mktmpdir }
     let(:archives) do
@@ -50,6 +50,60 @@ describe Gembrew::Resolver do
       expect(subject.resources).to eq [Gembrew::Resource.new(
         'dependency', '2.0.0', Digest::SHA256.file(archives[:dependency]).hexdigest
       )]
+    end
+  end
+
+  context 'with a GitHub source archive' do
+    let(:directory) { Pathname Dir.mktmpdir }
+    let(:archive) { directory/'bashly.tar.gz' }
+    let(:source) { directory/'source' }
+    let(:github_store) { instance_double Gembrew::GithubArchiveStore }
+    let(:resolver) do
+      described_class.new(
+        cache_root: directory/'cache', reporter: reporter,
+        archive_store: instance_double(Gembrew::ArchiveStore),
+        github_archive_store: github_store
+      )
+    end
+
+    before do
+      archive.write 'archive'
+      project = source/'bashly-1.4.0'
+      project.mkpath
+      (project/'bashly.gemspec').write <<~RUBY
+        Gem::Specification.new do |gem|
+          gem.name = 'bashly'
+          gem.version = '1.4.0'
+          gem.summary = 'Bashly'
+          gem.authors = ['Fixture']
+        end
+      RUBY
+      allow(github_store).to receive(:fetch).with('bashly-framework/bashly', 'v1.4.0').and_return archive
+      allow(github_store).to receive(:extract).with(archive, anything).and_return source
+    end
+
+    after { directory.rmtree }
+
+    it 'loads GEMNAME.gemspec from the configured repository archive' do
+      root_archive, spec = resolver.send(
+        :root_source, 'bashly', '1.4.0',
+        { 'type' => 'github', 'repo' => 'bashly-framework/bashly' }, directory/'work'
+      )
+
+      expect(root_archive).to eq archive
+      expect(spec.name).to eq 'bashly'
+      expect(spec.version.to_s).to eq '1.4.0'
+    end
+
+    it 'reports the expected gemspec path when it is missing' do
+      (source/'bashly-1.4.0/bashly.gemspec').delete
+
+      expect do
+        resolver.send(
+          :root_source, 'bashly', '1.4.0',
+          { 'type' => 'github', 'repo' => 'bashly-framework/bashly' }, directory/'work'
+        )
+      end.to raise_error(Gembrew::Error, 'Gemspec not found in GitHub archive: bashly.gemspec')
     end
   end
 
@@ -96,6 +150,7 @@ describe Gembrew::Resolver do
       Gem::Specification.new do |gem|
         gem.name = 'root'
         gem.version = '1.0.0'
+        gem.add_runtime_dependency 'dependency', '>= 2.0', '< 3.0'
       end
     end
 
@@ -110,6 +165,10 @@ describe Gembrew::Resolver do
         'BUNDLE_FORCE_RUBY_PLATFORM' => 'true',
         'BUNDLE_GEMFILE'             => (temporary/'Gemfile').to_s
       )
+      expect((temporary/'Gemfile').read).to include(
+        'gem "dependency", ">= 2.0", "< 3.0"'
+      )
+      expect((temporary/'Gemfile').read).not_to include 'gem "root"'
     end
   end
 

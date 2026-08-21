@@ -1,3 +1,6 @@
 gem: bashly
+version: "1.4.0"
+source:
+  type: gem
 output: Formula/bashly.rb
 test_from_file: support/test.rb

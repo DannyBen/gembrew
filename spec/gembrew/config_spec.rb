@@ -11,8 +11,11 @@ describe Gembrew::Config do
 
     it 'loads values and resolves paths from the configuration directory' do
       expect(subject.gem_name).to eq 'bashly'
-      expect(subject.version).to be_nil
-      expect(subject.repository).to eq 'https://github.com/bashly-framework/homebrew-tap'
+      expect(subject.version).to eq '1.4.0'
+      expect(subject.source_type).to eq 'github'
+      expect(subject.source_repo).to eq 'bashly-framework/bashly'
+      expect(subject.source_tag).to eq 'v1.4.0'
+      expect(subject.source_gemspec).to eq 'bashly.gemspec'
       expect(subject.output_path.to_s).to eq "#{fixture 'inline-test'}/Formula/bashly.rb"
       expect(subject.description).to eq 'Bashly CLI'
       expect(subject.dependencies).to eq ['bash']
@@ -20,19 +23,39 @@ describe Gembrew::Config do
     end
   end
 
-  context 'with an HTTPS repository URL' do
+  context 'with an invalid GitHub repository' do
     let(:fixture_name) { 'external-test' }
 
     before do
       allow(YAML).to receive(:safe_load_file).and_return(
         'gem' => 'bashly',
-        'repository' => 'https://git.example.com/tools/homebrew-tap',
+        'version' => '1.4.0',
+        'source' => {
+          'type' => 'github',
+          'repo' => 'https://github.com/bashly-framework/bashly',
+        },
         'test' => 'assert true'
       )
     end
 
-    it 'uses the URL unchanged' do
-      expect(subject.repository).to eq 'https://git.example.com/tools/homebrew-tap'
+    it 'requires owner/repository form' do
+      expect { subject }.to raise_error(Gembrew::Error, 'source.repo must be in owner/repository form')
+    end
+  end
+
+  context 'without a version' do
+    let(:fixture_name) { 'external-test' }
+
+    before do
+      allow(YAML).to receive(:safe_load_file).and_return(
+        'gem' => 'bashly',
+        'source' => { 'type' => 'gem' },
+        'test' => 'assert true'
+      )
+    end
+
+    it 'requires an explicit version' do
+      expect { subject }.to raise_error(Gembrew::Error, 'version is required')
     end
   end
 
@@ -42,6 +65,8 @@ describe Gembrew::Config do
     before do
       allow(YAML).to receive(:safe_load_file).and_return(
         'gem' => 'bashly',
+        'version' => '1.4.0',
+        'source' => { 'type' => 'gem' },
         'dependencies' => 'bash',
         'test' => 'assert true'
       )

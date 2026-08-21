@@ -1,3 +1,6 @@
 gem: example
+version: "1.2.3"
+source:
+  type: gem
 output: Formula/example.rb
 test_from_file: missing.rb

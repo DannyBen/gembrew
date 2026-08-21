@@ -6,7 +6,7 @@ module Gembrew
   class Config
     DIRECTORY = 'gembrew'
     ALLOWED_KEYS = %w[
-      gem version repository output desc homepage license executable dependencies test test_from_file
+      gem version source output desc homepage license executable dependencies test test_from_file
     ].freeze
 
     attr_reader :path, :project_path
@@ -41,13 +41,11 @@ module Gembrew
     def name = path.basename('.yml').to_s
     def gem_name = data.fetch('gem').to_s
     def version = data['version']&.to_s
-    def repository
-      value = data['repository']&.to_s
-      return if value.nil? || value.empty?
-      return value if value.start_with?('https://')
-
-      "https://github.com/#{value}"
-    end
+    def source = data.fetch('source')
+    def source_type = source.fetch('type')
+    def source_repo = source['repo']
+    def source_tag = source['tag'] || "v#{version}"
+    def source_gemspec = source['gemspec'] || "#{gem_name}.gemspec"
     def output_path = (project_path/(data['output'] || "Formula/#{name}.rb")).expand_path
     def description = data['desc']
     def homepage = data['homepage']
@@ -85,7 +83,9 @@ module Gembrew
       raise Error, "Unknown configuration keys: #{unknown_keys.join(', ')}" if unknown_keys.any?
 
       require_value 'gem'
-      validate_repository
+      require_value 'version'
+      require_value 'source'
+      validate_source
       validate_dependencies
 
       return unless data.has_key?('test') == data.has_key?('test_from_file')
@@ -98,12 +98,34 @@ module Gembrew
       raise Error, "#{key} is required" if value.nil? || value.to_s.empty?
     end
 
-    def validate_repository
-      return unless data.has_key?('repository')
+    def validate_source
+      raise Error, 'source must be a mapping' unless source.is_a?(Hash)
 
-      value = data['repository'].to_s
-      valid = value.match?(%r{\Ahttps://\S+\z}) || value.match?(%r{\A[^/\s]+/[^/\s]+\z})
-      raise Error, 'repository must be an HTTPS URL or owner/repository' unless valid
+      unknown_keys = source.keys - %w[type repo tag gemspec]
+      raise Error, "Unknown source keys: #{unknown_keys.join(', ')}" if unknown_keys.any?
+
+      type = source['type']&.to_s
+      raise Error, 'source.type must be github or gem' unless %w[github gem].include? type
+
+      if type == 'gem'
+        extra_keys = source.keys - ['type']
+        raise Error, "source.#{extra_keys.first} is only valid for GitHub sources" if extra_keys.any?
+        return
+      end
+
+      repo = source['repo']&.to_s
+      raise Error, 'source.repo is required for GitHub sources' if repo.nil? || repo.empty?
+      raise Error, 'source.repo must be in owner/repository form' unless repo.match?(%r{\A[^/\s]+/[^/\s]+\z})
+
+      validate_relative_source_path 'gemspec' if source.has_key?('gemspec')
+      raise Error, 'source.tag must not be empty' if source.has_key?('tag') && source['tag'].to_s.empty?
+    end
+
+    def validate_relative_source_path(key)
+      value = source[key].to_s
+      path = Pathname(value)
+      valid = !value.empty? && !path.absolute? && path.each_filename.none? { |part| part == '..' }
+      raise Error, "source.#{key} must be a relative path within the archive" unless valid
     end
 
     def validate_dependencies

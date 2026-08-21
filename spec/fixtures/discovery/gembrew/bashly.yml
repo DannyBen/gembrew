@@ -1,2 +1,5 @@
 gem: bashly
+version: "1.4.0"
+source:
+  type: gem
 test: test

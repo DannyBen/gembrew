@@ -8,9 +8,11 @@ describe Gembrew::Generator do
   let(:output_path) { directory/'Formula/example_cli.rb' }
   let(:config) do
     instance_double Gembrew::Config,
-      gem_name: 'example_cli', version: nil, output_path: output_path,
+      gem_name: 'example_cli', version: '1.2.3', output_path: output_path,
       description: nil, homepage: nil, license: nil, executable: nil,
-      repository: 'https://github.com/bashly-framework/homebrew-tap',
+      source: { 'type' => 'github', 'repo' => 'bashly-framework/bashly' },
+      source_type: 'github', source_repo: 'bashly-framework/bashly',
+      source_tag: 'v1.2.3', source_gemspec: 'example_cli.gemspec',
       dependencies: ['bash'],
       test_body: %[system bin/"example", "--version"]
   end
@@ -32,17 +34,17 @@ describe Gembrew::Generator do
   end
   let(:resolver) { instance_double Gembrew::Resolver }
 
-  before { allow(resolver).to receive(:resolve).with('example_cli', nil).and_return resolution }
+  before do
+    allow(resolver).to receive(:resolve)
+      .with('example_cli', '1.2.3', source: {
+        'type' => 'github', 'repo' => 'bashly-framework/bashly'
+      })
+      .and_return resolution
+  end
   after { directory.rmtree }
 
   it 'renders a complete formula using inferred metadata and resolved resources' do
     expect(subject.call).to eq output_path
     expect(output_path.read).to match_approval('generator/formula')
-  end
-
-  it 'omits the header when no repository is configured' do
-    allow(config).to receive(:repository).and_return nil
-    subject.call
-    expect(output_path.read).to start_with "class ExampleCli < Formula\n"
   end
 end

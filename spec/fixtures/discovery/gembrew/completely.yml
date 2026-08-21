@@ -1,2 +1,5 @@
 gem: completely
+version: "0.8.0"
+source:
+  type: gem
 test: test
