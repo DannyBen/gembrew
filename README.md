@@ -21,9 +21,10 @@ gembrew check
 ```
 
 `init` creates a tap repository containing `README.md`, `gembrew/`, `Formula/`,
-and a GitHub Actions workflow that styles, audits, installs, tests, and checks
-the linkage of every formula on Linux and macOS. It accepts an empty directory
-or an existing tap containing `Formula/`.
+and a GitHub Actions workflow that uses Homebrew's `test-bot` on Linux, Apple
+Silicon, and Intel macOS. Pull requests test changed formulae; pushes, scheduled
+runs, and manual runs test every formula. It accepts an empty directory or an
+existing tap containing `Formula/`.
 Supplying a gem name also creates its first configuration. The gem name is
 optional, so `gembrew init` can prepare an empty tap or add Gembrew to an
 existing one. Existing README and workflow files are never overwritten.

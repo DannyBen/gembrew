@@ -23,6 +23,10 @@ Install [Gembrew](https://github.com/DannyBen/gembrew):
 gem install gembrew
 ```
 
+The generated GitHub Actions workflow uses Homebrew's `test-bot` on Linux,
+Apple Silicon, and Intel macOS. Pull requests test changed formulae; pushes,
+scheduled runs, and manual runs test every formula.
+
 Generate all formulae:
 
 ```shell
