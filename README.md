@@ -89,6 +89,7 @@ executable: example
 # Optional additional Homebrew formula dependencies:
 dependencies:
   - bash
+  - libffi :system_on_macos
 
 # Optional output override. The default for gembrew/example.yml is shown here.
 output: Formula/example.rb
@@ -99,6 +100,9 @@ test: |-
 # Use this instead of `test` to load the test body from another file:
 # test_from_file: support/test.rb
 ```
+
+Tag a dependency with `:system_on_macos` when macOS provides it and Homebrew
+should install its formula only on other platforms.
 
 To build the root gem from a GitHub tag while continuing to fetch its
 dependencies from RubyGems, use:

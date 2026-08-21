@@ -17,7 +17,7 @@ module Gembrew
     attr_reader :cache_root
 
     def initialize(cache_root: nil, reporter: Reporter.new, command_runner: nil, archive_store: nil,
-      github_archive_store: nil)
+                   github_archive_store: nil)
       @cache_root = Pathname(cache_root || default_cache_root)
       @reporter = reporter
       @command_runner = command_runner || method(:run_command)
@@ -54,27 +54,48 @@ module Gembrew
     end
 
     def root_source(name, version, source_config, temporary)
-      if source_config.fetch('type') == 'rubygems'
-        archive = archive_store.fetch(name, version, temporary)
-        return [archive, Gem::Package.new(archive.to_s).spec]
-      end
+      return rubygems_root_source(name, version, temporary) if source_config.fetch('type') == 'rubygems'
 
+      github_root_source name, version, source_config, temporary
+    end
+
+    def rubygems_root_source(name, version, temporary)
+      archive = archive_store.fetch(name, version, temporary)
+      [archive, Gem::Package.new(archive.to_s).spec]
+    end
+
+    def github_root_source(name, version, source_config, temporary)
       repository = source_config.fetch('repo')
       tag = source_config['tag'] || "v#{version}"
       gemspec_path = source_config['gemspec'] || "#{name}.gemspec"
       archive = github_archive_store.fetch repository, tag
+      root = github_project_root archive, temporary
+      spec = load_github_spec root/gemspec_path, gemspec_path
+      validate_github_spec spec, name, version
+
+      [archive, spec]
+    end
+
+    def github_project_root(archive, temporary)
       extracted = github_archive_store.extract archive, temporary/'source'
       roots = extracted.children.select(&:directory?)
       raise Error, 'Expected one project directory in the GitHub archive' unless roots.one?
 
-      gemspec = roots.first/gemspec_path
+      roots.first
+    end
+
+    def load_github_spec(gemspec, gemspec_path)
       raise Error, "Gemspec not found in GitHub archive: #{gemspec_path}" unless gemspec.file?
+
       spec = Dir.chdir(gemspec.dirname) { Gem::Specification.load(gemspec.basename.to_s) }
       raise Error, "Could not load gemspec from GitHub archive: #{gemspec_path}" unless spec
+
+      spec
+    end
+
+    def validate_github_spec(spec, name, version)
       raise Error, "Gemspec name #{spec.name} does not match configured gem #{name}" unless spec.name == name
       raise Error, "GitHub gemspec version #{spec.version} does not match #{version}" unless spec.version == Gem::Version.new(version)
-
-      [archive, spec]
     end
 
     def resource(spec, temporary, index, total)
@@ -98,7 +119,7 @@ module Gembrew
         requirements = dependency.requirement.requirements.map { |operator, version| "#{operator} #{version}" }
         "gem #{dependency.name.inspect}, #{requirements.map(&:inspect).join(', ')}"
       end
-      gemfile.write([[%(source "https://rubygems.org")], dependencies, ['']].flatten.join("\n"))
+      gemfile.write([[%[source "https://rubygems.org"]], dependencies, ['']].flatten.join("\n"))
 
       reporter.resolving root_spec.name, root_spec.version
       command_runner.call(

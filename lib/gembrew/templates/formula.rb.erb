@@ -9,8 +9,16 @@ class <%= formula_name %> < Formula
   sha256 "<%= sha256 %>"
   license <%= license.inspect %>
 
-<% dependencies.each do |dependency| -%>
-  depends_on <%= dependency.inspect %>
+<% formula_dependencies = dependencies.reject(&:system_on_macos?) -%>
+<% macos_dependencies = dependencies.select(&:system_on_macos?) -%>
+<% formula_dependencies.each do |dependency| -%>
+  depends_on <%= dependency.name.inspect %>
+<% end -%>
+<% if formula_dependencies.any? && macos_dependencies.any? -%>
+
+<% end -%>
+<% macos_dependencies.each do |dependency| -%>
+  uses_from_macos <%= dependency.name.inspect %>
 <% end -%>
 <% resources.each do |resource| -%>
 
@@ -36,6 +44,9 @@ class <%= formula_name %> < Formula
     system "gem", "install", cached_download,
       "--ignore-dependencies", "--install-dir", libexec, "--no-document"
 <% end -%>
+
+    rm libexec.glob("extensions/*/*/*/mkmf.log")
+    deuniversalize_machos if OS.mac?
 
     (bin/<%= executable.inspect %>).write_env_script libexec/"bin/<%= executable %>", GEM_HOME: ENV.fetch("GEM_HOME")
   end

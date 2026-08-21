@@ -27,4 +27,42 @@ describe Gembrew::GithubArchiveStore do
     expect(store.fetch('owner/project', 'v1.2.3')).to eq path
     expect(commands.length).to eq 1
   end
+
+  it 'extracts an archive into the destination' do
+    destination = directory/'source'
+
+    expect(store.extract(directory/'archive.tar.gz', destination)).to eq destination
+    expect(commands.last).to eq [
+      ['tar', '-xzf', "#{directory}/archive.tar.gz", '-C', destination.to_s],
+      destination,
+    ]
+  end
+
+  context 'with the default command runner' do
+    let(:store) { described_class.new cache_path: directory/'cache', reporter: reporter }
+    let(:status) { instance_double Process::Status, success?: success }
+
+    before do
+      allow(Open3).to receive(:capture2e).and_return([output, status])
+    end
+
+    context 'when the command succeeds' do
+      let(:success) { true }
+      let(:output) { 'done' }
+
+      it 'returns the command output' do
+        expect(store.send(:run_command, 'command', chdir: directory)).to eq 'done'
+      end
+    end
+
+    context 'when the command fails' do
+      let(:success) { false }
+      let(:output) { 'failed' }
+
+      it 'raises a Gembrew error' do
+        expect { store.send(:run_command, 'command', chdir: directory) }
+          .to raise_error(Gembrew::Error, 'failed')
+      end
+    end
+  end
 end

@@ -4,6 +4,11 @@ require 'gembrew/error'
 
 module Gembrew
   class Config
+    Dependency = Data.define(:name, :tags) do
+      def system_on_macos? = tags.include? :system_on_macos
+    end
+
+    DEPENDENCY_TAGS = %w[:system_on_macos].freeze
     DIRECTORY = 'gembrew'
     ALLOWED_KEYS = %w[
       gem version source output desc homepage license executable dependencies test test_from_file
@@ -51,7 +56,10 @@ module Gembrew
     def homepage = data['homepage']
     def license = data['license']
     def executable = data['executable']
-    def dependencies = data.fetch('dependencies', [])
+
+    def dependencies
+      @dependencies ||= data.fetch('dependencies', []).map { |value| parse_dependency value }
+    end
 
     def test_body
       @test_body ||= if data.has_key?('test')
@@ -101,18 +109,25 @@ module Gembrew
     def validate_source
       raise Error, 'source must be a mapping' unless source.is_a?(Hash)
 
+      validate_source_keys
+      case source['type']&.to_s
+      when 'rubygems' then validate_rubygems_source
+      when 'github' then validate_github_source
+      else raise Error, 'source.type must be github or rubygems'
+      end
+    end
+
+    def validate_source_keys
       unknown_keys = source.keys - %w[type repo tag gemspec]
       raise Error, "Unknown source keys: #{unknown_keys.join(', ')}" if unknown_keys.any?
+    end
 
-      type = source['type']&.to_s
-      raise Error, 'source.type must be github or rubygems' unless %w[github rubygems].include? type
+    def validate_rubygems_source
+      extra_keys = source.keys - ['type']
+      raise Error, "source.#{extra_keys.first} is only valid for GitHub sources" if extra_keys.any?
+    end
 
-      if type == 'rubygems'
-        extra_keys = source.keys - ['type']
-        raise Error, "source.#{extra_keys.first} is only valid for GitHub sources" if extra_keys.any?
-        return
-      end
-
+    def validate_github_source
       repo = source['repo']&.to_s
       raise Error, 'source.repo is required for GitHub sources' if repo.nil? || repo.empty?
       raise Error, 'source.repo must be in owner/repository form' unless repo.match?(%r{\A[^/\s]+/[^/\s]+\z})
@@ -124,17 +139,35 @@ module Gembrew
     def validate_relative_source_path(key)
       value = source[key].to_s
       path = Pathname(value)
-      valid = !value.empty? && !path.absolute? && path.each_filename.none? { |part| part == '..' }
+      valid = !value.empty? && !path.absolute? && path.each_filename.none?('..')
       raise Error, "source.#{key} must be a relative path within the archive" unless valid
     end
 
     def validate_dependencies
       return unless data.has_key?('dependencies')
 
-      dependencies = data['dependencies']
-      valid = dependencies.is_a?(Array) &&
-        dependencies.all? { |dependency| dependency.is_a?(String) && !dependency.empty? }
-      raise Error, 'dependencies must be a sequence of names' unless valid
+      raise Error, 'dependencies must be a sequence' unless data['dependencies'].is_a?(Array)
+
+      dependencies
+      names = dependencies.map(&:name)
+      duplicate = names.find { |name| names.count(name) > 1 }
+      raise Error, "dependency #{duplicate.inspect} is specified more than once" if duplicate
+    end
+
+    def parse_dependency(value)
+      raise Error, 'each dependency must be a name followed by optional tags' unless value.is_a?(String)
+
+      values = value.split
+      name = values.shift
+      unless name && !name.start_with?(':')
+        raise Error, 'dependency name must be a non-empty string'
+      end
+
+      invalid_tag = values.find { |tag| !tag.is_a?(String) || !DEPENDENCY_TAGS.include?(tag) }
+      raise Error, "unknown dependency tag: #{invalid_tag.inspect}" if invalid_tag
+      raise Error, "dependency #{name.inspect} has duplicate tags" unless values.uniq.length == values.length
+
+      Dependency.new(name:, tags: values.map { |tag| tag.delete_prefix(':').to_sym }.freeze)
     end
   end
 end

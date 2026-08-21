@@ -13,7 +13,10 @@ describe Gembrew::Generator do
       source: { 'type' => 'github', 'repo' => 'bashly-framework/bashly' },
       source_type: 'github', source_repo: 'bashly-framework/bashly',
       source_tag: 'v1.2.3', source_gemspec: 'example_cli.gemspec',
-      dependencies: ['bash'],
+      dependencies: [
+        Gembrew::Config::Dependency.new(name: 'libffi', tags: [:system_on_macos]),
+        Gembrew::Config::Dependency.new(name: 'bash', tags: []),
+      ],
       test_body: %[system bin/"example", "--version"]
   end
   let(:resolution) do
@@ -41,6 +44,7 @@ describe Gembrew::Generator do
       })
       .and_return resolution
   end
+
   after { directory.rmtree }
 
   it 'renders a complete formula using inferred metadata and resolved resources' do

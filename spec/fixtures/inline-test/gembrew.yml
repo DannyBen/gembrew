@@ -7,5 +7,6 @@ output: Formula/bashly.rb
 desc: Bashly CLI
 dependencies:
   - bash
+  - libffi :system_on_macos
 test: |-
   system bin/"bashly", "--version"

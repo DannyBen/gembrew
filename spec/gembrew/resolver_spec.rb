@@ -154,20 +154,39 @@ describe Gembrew::Resolver do
       end
     end
 
-    before { temporary.mkpath }
+    before do
+      temporary.mkpath
+      subject
+    end
+
     after { directory.rmtree }
 
-    it 'forces the generic Ruby platform' do
+    it 'creates the lockfile' do
       expect(subject).to be_file
+    end
+
+    it 'locks the generic Ruby platform' do
       expect(invocation[:command]).to include 'bundle', 'lock', '--add-platform', 'ruby'
+    end
+
+    it 'runs Bundler from the temporary directory' do
       expect(invocation[:chdir]).to eq temporary
+    end
+
+    it 'forces the generic Ruby platform through the environment' do
       expect(invocation[:env]).to eq(
         'BUNDLE_FORCE_RUBY_PLATFORM' => 'true',
         'BUNDLE_GEMFILE'             => (temporary/'Gemfile').to_s
       )
+    end
+
+    it 'writes runtime dependencies to the Gemfile' do
       expect((temporary/'Gemfile').read).to include(
         'gem "dependency", ">= 2.0", "< 3.0"'
       )
+    end
+
+    it 'does not write the root gem to the Gemfile' do
       expect((temporary/'Gemfile').read).not_to include 'gem "root"'
     end
   end

@@ -9,16 +9,34 @@ describe Gembrew::Config do
   context 'with an inline test' do
     let(:fixture_name) { 'inline-test' }
 
-    it 'loads values and resolves paths from the configuration directory' do
+    it 'loads the gem identity' do
       expect(subject.gem_name).to eq 'bashly'
       expect(subject.version).to eq '1.4.0'
+    end
+
+    it 'loads the GitHub source' do
       expect(subject.source_type).to eq 'github'
       expect(subject.source_repo).to eq 'bashly-framework/bashly'
       expect(subject.source_tag).to eq 'v1.4.0'
       expect(subject.source_gemspec).to eq 'bashly.gemspec'
+    end
+
+    it 'resolves the output path from the project directory' do
       expect(subject.output_path.to_s).to eq "#{fixture 'inline-test'}/Formula/bashly.rb"
+    end
+
+    it 'loads metadata overrides' do
       expect(subject.description).to eq 'Bashly CLI'
-      expect(subject.dependencies).to eq ['bash']
+    end
+
+    it 'parses dependencies' do
+      expect(subject.dependencies).to eq [
+        Gembrew::Config::Dependency.new(name: 'bash', tags: []),
+        Gembrew::Config::Dependency.new(name: 'libffi', tags: [:system_on_macos]),
+      ]
+    end
+
+    it 'loads the inline test' do
       expect(subject.test_body).to eq %[system bin/"bashly", "--version"]
     end
   end
@@ -28,13 +46,13 @@ describe Gembrew::Config do
 
     before do
       allow(YAML).to receive(:safe_load_file).and_return(
-        'gem' => 'bashly',
+        'gem'     => 'bashly',
         'version' => '1.4.0',
-        'source' => {
+        'source'  => {
           'type' => 'github',
           'repo' => 'https://github.com/bashly-framework/bashly',
         },
-        'test' => 'assert true'
+        'test'    => 'assert true'
       )
     end
 
@@ -48,10 +66,10 @@ describe Gembrew::Config do
 
     before do
       allow(YAML).to receive(:safe_load_file).and_return(
-        'gem' => 'bashly',
+        'gem'     => 'bashly',
         'version' => '1.4.0',
-        'source' => { 'type' => 'gem' },
-        'test' => 'assert true'
+        'source'  => { 'type' => 'gem' },
+        'test'    => 'assert true'
       )
     end
 
@@ -66,9 +84,9 @@ describe Gembrew::Config do
 
     before do
       allow(YAML).to receive(:safe_load_file).and_return(
-        'gem' => 'bashly',
+        'gem'    => 'bashly',
         'source' => { 'type' => 'rubygems' },
-        'test' => 'assert true'
+        'test'   => 'assert true'
       )
     end
 
@@ -82,17 +100,79 @@ describe Gembrew::Config do
 
     before do
       allow(YAML).to receive(:safe_load_file).and_return(
-        'gem' => 'bashly',
-        'version' => '1.4.0',
-        'source' => { 'type' => 'rubygems' },
+        'gem'          => 'bashly',
+        'version'      => '1.4.0',
+        'source'       => { 'type' => 'rubygems' },
         'dependencies' => 'bash',
-        'test' => 'assert true'
+        'test'         => 'assert true'
       )
     end
 
     it 'requires a sequence of dependency names' do
       expect { subject }
-        .to raise_error(Gembrew::Error, 'dependencies must be a sequence of names')
+        .to raise_error(Gembrew::Error, 'dependencies must be a sequence')
+    end
+  end
+
+  context 'with an invalid dependency tag' do
+    let(:fixture_name) { 'external-test' }
+
+    before do
+      allow(YAML).to receive(:safe_load_file).and_return(
+        'gem'          => 'bashly',
+        'version'      => '1.4.0',
+        'source'       => { 'type' => 'rubygems' },
+        'dependencies' => ['libffi :native'],
+        'test'         => 'assert true'
+      )
+    end
+
+    it 'rejects unknown tags' do
+      expect { subject }
+        .to raise_error(Gembrew::Error, 'unknown dependency tag: ":native"')
+    end
+  end
+
+  context 'with a malformed dependency' do
+    let(:fixture_name) { 'external-test' }
+
+    before do
+      allow(YAML).to receive(:safe_load_file).and_return(
+        'gem'          => 'bashly',
+        'version'      => '1.4.0',
+        'source'       => { 'type' => 'rubygems' },
+        'dependencies' => [':system_on_macos'],
+        'test'         => 'assert true'
+      )
+    end
+
+    it 'requires a package name before tags' do
+      expect { subject }
+        .to raise_error(Gembrew::Error, 'dependency name must be a non-empty string')
+    end
+  end
+
+  context 'with an unsafe GitHub gemspec path' do
+    let(:fixture_name) { 'external-test' }
+
+    before do
+      allow(YAML).to receive(:safe_load_file).and_return(
+        'gem'     => 'bashly',
+        'version' => '1.4.0',
+        'source'  => {
+          'type'    => 'github',
+          'repo'    => 'bashly-framework/bashly',
+          'gemspec' => '../bashly.gemspec',
+        },
+        'test'    => 'assert true'
+      )
+    end
+
+    it 'keeps the gemspec inside the source archive' do
+      expect { subject }.to raise_error(
+        Gembrew::Error,
+        'source.gemspec must be a relative path within the archive'
+      )
     end
   end
 

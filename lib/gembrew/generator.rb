@@ -35,17 +35,23 @@ module Gembrew
 
     def metadata(spec)
       {
-        description: config.description || spec.summary,
-        homepage:    config.homepage || inferred_homepage(spec),
-        license:     config.license || spec.license || spec.licenses.first,
-        executable:  config.executable || spec.executables.first || spec.name,
-        source_type: config.source_type,
-        source_repo: config.source_repo,
-        source_tag:  config.source_tag,
+        description:    config.description || spec.summary,
+        homepage:       config.homepage || inferred_homepage(spec),
+        license:        config.license || spec.license || spec.licenses.first,
+        executable:     config.executable || spec.executables.first || spec.name,
+        source_type:    config.source_type,
+        source_repo:    config.source_repo,
+        source_tag:     config.source_tag,
         source_gemspec: config.source_gemspec,
-        dependencies: (config.dependencies + ['ruby']).uniq,
-        test_body:   config.test_body,
+        dependencies:   formula_dependencies,
+        test_body:      config.test_body,
       }
+    end
+
+    def formula_dependencies
+      ([Config::Dependency.new(name: 'ruby', tags: [])] + config.dependencies)
+        .uniq(&:name)
+        .sort_by(&:name)
     end
 
     def formula_name(gem_name)
