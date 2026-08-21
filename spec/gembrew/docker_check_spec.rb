@@ -8,7 +8,8 @@ describe Gembrew::DockerCheck do
     a_string_including(
       "printf '\\n\\033[1;34m==> gembrew: %s\\033[0m\\n'",
       'caption "styling $formula"', 'brew audit --new --online "$formula"',
-      'brew install --build-from-source "$formula"', 'brew test "$formula"'
+      'brew install --build-from-source "$formula"', 'brew test "$formula"',
+      'caption "checking linkage for $formula"', 'brew linkage --test "$formula"'
     )
   end
 
@@ -17,6 +18,9 @@ describe Gembrew::DockerCheck do
     allow(runner).to receive(:call) { |*args| arguments.replace args }
     expect(subject.call('example')).to be true
     expect(arguments).to match ['bash', '-euc', script_matcher]
+
+    script = arguments.last
+    expect(script.index('brew test "$formula"')).to be < script.index('brew linkage --test "$formula"')
   end
 
   context 'when the check fails' do

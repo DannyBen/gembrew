@@ -60,5 +60,6 @@ jobs:
             brew audit --new --online "$formula_name"
             brew install --build-from-source "$formula_name"
             brew test "$formula_name"
+            brew linkage --test "$formula_name"
             brew uninstall "$formula_name"
           done

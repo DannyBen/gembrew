@@ -32,6 +32,8 @@ module Gembrew
         brew install --build-from-source "$formula"
         caption "testing $formula"
         brew test "$formula"
+        caption "checking linkage for $formula"
+        brew linkage --test "$formula"
       BASH
     end
   end

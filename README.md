@@ -21,9 +21,9 @@ gembrew check
 ```
 
 `init` creates a tap repository containing `README.md`, `gembrew/`, `Formula/`,
-and a GitHub Actions workflow that styles, audits, installs, and tests every
-formula on Linux and macOS. It accepts an empty directory or an existing tap
-containing `Formula/`.
+and a GitHub Actions workflow that styles, audits, installs, tests, and checks
+the linkage of every formula on Linux and macOS. It accepts an empty directory
+or an existing tap containing `Formula/`.
 Supplying a gem name also creates its first configuration. The gem name is
 optional, so `gembrew init` can prepare an empty tap or add Gembrew to an
 existing one. Existing README and workflow files are never overwritten.
@@ -133,6 +133,7 @@ brew style example
 brew audit --new --online example
 brew install --build-from-source example
 brew test example
+brew linkage --test example
 ```
 
 To test a published tap without mounting the local repository, open a pristine
@@ -149,9 +150,10 @@ gembrew check
 ```
 
 This rebuilds every configured formula, then runs Homebrew style, online audit,
-source installation, and the formula test in disposable Homebrew containers.
-Use `gembrew check example` to check only one formula. Gembrew invokes Docker
-directly; the tap does not need generated container support files.
+source installation, the formula test, and linkage validation in disposable
+Homebrew containers. Use `gembrew check example` to check only one formula.
+Gembrew invokes Docker directly; the tap does not need generated container
+support files.
 
 ## Contributing / Support
 

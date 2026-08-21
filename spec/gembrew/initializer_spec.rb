@@ -13,7 +13,11 @@ describe Gembrew::Initializer do
     expect(directory/'Formula').to be_directory
     expect((directory/'gembrew/example.yml').read).to match_approval('initializer/gembrew.yml')
     expect((directory/'README.md').read).to match_approval('initializer/README.md')
-    expect((directory/'.github/workflows/test.yml').read).to match_approval('initializer/test.yml')
+    workflow = (directory/'.github/workflows/test.yml').read
+    expect(workflow).to match_approval('initializer/test.yml')
+    expect(workflow).to match(
+      /brew test "\$formula_name"\n\s+brew linkage --test "\$formula_name"\n\s+brew uninstall "\$formula_name"/
+    )
     expect(directory/'support').not_to exist
   end
 
