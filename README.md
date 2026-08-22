@@ -10,6 +10,11 @@ Generate conventional Homebrew formulae for published Ruby command-line gems.
 gem install gembrew
 ```
 
+## Example
+
+See the [Bashly Homebrew tap](https://github.com/bashly-framework/homebrew-tap)
+for a real-world tap generated and maintained with Gembrew.
+
 ## Usage
 
 ```shell
