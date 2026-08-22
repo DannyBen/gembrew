@@ -1,6 +1,14 @@
 Changelog
 ========================================
 
+v0.2.0 - 2026-08-22
+----------------------------------------
+
+- Harden template CI tests [`560388a`](https://github.com/dannyben/gembrew/commit/560388a)
+- Refactor input config as a directory [`6975c07`](https://github.com/dannyben/gembrew/commit/6975c07)
+- Compare [`v0.1.2..v0.2.0`](https://github.com/dannyben/gembrew/compare/v0.1.2..v0.2.0)
+
+
 v0.1.2 - 2026-08-21
 ----------------------------------------
 
