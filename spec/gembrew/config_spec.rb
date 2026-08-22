@@ -99,6 +99,24 @@ describe Gembrew::Config do
       expect { subject }.to raise_error(Gembrew::Error, 'source.repo must be in owner/repository form')
     end
 
+    it 'requires a supported source type' do
+      write_config(
+        'gem' => 'bashly', 'version' => '1.4.0', 'source' => { 'type' => 'archive' }
+      )
+      expect { subject }.to raise_error(Gembrew::Error, 'source.type must be github or rubygems')
+    end
+
+    it 'keeps the GitHub gemspec inside the source archive' do
+      write_config(
+        'gem' => 'bashly', 'version' => '1.4.0',
+        'source' => { 'type' => 'github', 'repo' => 'bashly-framework/bashly', 'gemspec' => '../bashly.gemspec' }
+      )
+      expect { subject }.to raise_error(
+        Gembrew::Error,
+        'source.gemspec must be a relative path within the archive'
+      )
+    end
+
     it 'rejects unknown keys from the former inline test format' do
       write_config(
         'gem' => 'bashly', 'version' => '1.4.0', 'source' => { 'type' => 'rubygems' },
@@ -121,6 +139,19 @@ describe Gembrew::Config do
         'dependencies' => ['libffi :native']
       )
       expect { subject }.to raise_error(Gembrew::Error, 'unknown dependency tag: ":native"')
+    end
+
+    it 'requires a dependency name before its tags' do
+      write_config(
+        'gem' => 'bashly', 'version' => '1.4.0', 'source' => { 'type' => 'rubygems' },
+        'dependencies' => [':macos_only']
+      )
+      expect { subject }.to raise_error(Gembrew::Error, 'dependency name must be a non-empty string')
+    end
+
+    it 'reports malformed YAML' do
+      (directory/'formula.yml').write "gem: [\n"
+      expect { subject }.to raise_error(Gembrew::Error, /Invalid configuration:/)
     end
   end
 
