@@ -9,16 +9,25 @@ class <%= formula_name %> < Formula
   sha256 "<%= sha256 %>"
   license <%= license.inspect %>
 
-<% formula_dependencies = dependencies.reject(&:system_on_macos?) -%>
+<% formula_dependencies = dependencies.reject { |dependency| dependency.system_on_macos? || dependency.macos_only? } -%>
 <% macos_dependencies = dependencies.select(&:system_on_macos?) -%>
+<% macos_only_dependencies = dependencies.select(&:macos_only?) -%>
 <% formula_dependencies.each do |dependency| -%>
   depends_on <%= dependency.name.inspect %>
 <% end -%>
-<% if formula_dependencies.any? && macos_dependencies.any? -%>
+<% if formula_dependencies.any? && (macos_dependencies.any? || macos_only_dependencies.any?) -%>
 
 <% end -%>
 <% macos_dependencies.each do |dependency| -%>
   uses_from_macos <%= dependency.name.inspect %>
+<% end -%>
+<% if macos_only_dependencies.any? -%>
+
+  on_macos do
+<% macos_only_dependencies.each do |dependency| -%>
+    depends_on <%= dependency.name.inspect %>
+<% end -%>
+  end
 <% end -%>
 <% resources.each do |resource| -%>
 
@@ -45,13 +54,14 @@ class <%= formula_name %> < Formula
       "--ignore-dependencies", "--install-dir", libexec, "--no-document"
 <% end -%>
 
-    rm libexec.glob("extensions/*/*/*/mkmf.log")
-    deuniversalize_machos if OS.mac?
-
     (bin/<%= executable.inspect %>).write_env_script libexec/"bin/<%= executable %>", GEM_HOME: ENV.fetch("GEM_HOME")
+<% if install_extra_body -%>
+
+<%= install_extra_body.lines(chomp: true).map { |line| line.strip.empty? ? '' : "    #{line}" }.join("\n") %>
+<% end -%>
   end
 
   test do
-<%= test_body.lines.map { |line| "    #{line}" }.join %>
+<%= test_body.lines(chomp: true).map { |line| line.strip.empty? ? '' : "    #{line}" }.join("\n") %>
   end
 end

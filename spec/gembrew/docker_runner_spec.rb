@@ -37,8 +37,20 @@ describe Gembrew::DockerRunner do
     allow(command_runner).to receive(:call) { |*args| arguments.replace args }
     subject.call 'bash', interactive: true, pristine: true
 
-    expect(arguments).to include '-it', 'PS1=\n\nhomebrew $ '
+    expect(arguments).to include '--pull=always', '-it', 'PS1=\n\nhomebrew $ '
     expect(arguments).not_to include '--workdir', '--volume'
+  end
+
+  it 'leaves the stock Homebrew environment unchanged in a pristine container' do
+    arguments = []
+    allow(command_runner).to receive(:call) { |*args| arguments.replace args }
+    subject.call 'bash', pristine: true
+
+    expect(arguments).not_to include(
+      'HOMEBREW_NO_AUTO_UPDATE=1',
+      'HOMEBREW_NO_INSTALL_CLEANUP=1',
+      'HOMEBREW_NO_INSTALL_FROM_API=1'
+    )
   end
 
   it 'streams command output through the system process' do

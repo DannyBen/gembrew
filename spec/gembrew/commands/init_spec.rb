@@ -11,7 +11,8 @@ describe Gembrew::Commands::Init do
           .to output("Initialized #{directory} for example\n").to_stdout
       end
 
-      expect(File).to exist("#{directory}/gembrew/example.yml")
+      expect(File).to exist("#{directory}/gembrew/example/formula.yml")
+      expect(File).to exist("#{directory}/gembrew/example/test.rb")
     end
   end
 

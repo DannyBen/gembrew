@@ -37,27 +37,34 @@ README.md
   workflows/
     test.yml
 gembrew/
-  example.yml
+  example/
+    formula.yml
+    test.rb
 Formula/
 ```
 
-`gembrew/example.yml` contains:
+`gembrew/example/formula.yml` contains the gem metadata and source:
 
 ```yaml
 gem: example
-
-test: |-
-  system bin/"example", "--version"
+version: "" # required
+source:
+  type: rubygems
 ```
 
-Edit the configuration as needed, then generate `Formula/example.rb`:
+`gembrew/example/test.rb` contains the generated default test:
+
+```ruby
+system bin/"example", "--version"
+```
+
+Edit these files as needed, then generate `Formula/example.rb`:
 
 ```shell
 gembrew build
 ```
 
-Each YAML file under `gembrew/` describes one formula. Add more published gems
-with:
+Each directory under `gembrew/` describes one formula. Add more published gems with:
 
 ```shell
 gembrew add another-gem
@@ -70,10 +77,9 @@ generate just one:
 gembrew build example
 ```
 
-The required settings are `gem`, `version`, `source`, and exactly one of `test`
-or `test_from_file`.
+The required settings in `formula.yml` are `gem`, `version`, and `source`.
 The output defaults to `Formula/NAME.rb`, where `NAME` is the configuration
-filename. Relative paths are resolved from the tap root.
+directory name. Relative output paths are resolved from the tap root.
 
 ```yaml
 gem: example
@@ -90,20 +96,29 @@ executable: example
 # Optional additional Homebrew formula dependencies:
 dependencies:
   - bash
+  - bash :macos_only
   - libffi :system_on_macos
 
-# Optional output override. The default for gembrew/example.yml is shown here.
+# Optional output override. The default for gembrew/example is shown here.
 output: Formula/example.rb
-
-test: |-
-  system bin/"example", "--version"
-
-# Use this instead of `test` to load the test body from another file:
-# test_from_file: support/test.rb
 ```
 
 Tag a dependency with `:system_on_macos` when macOS provides it and Homebrew
-should install its formula only on other platforms.
+should install its formula only on other platforms. Tag it with `:macos_only`
+when Homebrew should install it only on macOS.
+
+You may add these optional Ruby hook files beside `formula.yml`:
+
+```text
+install_extra.rb  Runs after the standard gem installation
+test.rb           Defines the formula test
+```
+
+Gembrew generates a basic `COMMAND --version` test when `test.rb` is absent.
+`gembrew init GEM` and `gembrew add GEM` create that test file so it can be
+replaced with a meaningful functional test. Gembrew inserts `install_extra.rb`
+at the end of the formula's `install` method, after installing the gem and
+creating its executable wrapper.
 
 To build the root gem from a GitHub tag while continuing to fetch its
 dependencies from RubyGems, use:
@@ -134,15 +149,16 @@ The repository is mounted as a local tap, so formulae can be addressed by gem
 name inside the shell:
 
 ```shell
-brew style example
-brew audit --new --online example
-brew install --build-from-source example
-brew test example
-brew linkage --test example
+brew style gembrew/tap/example
+brew audit --new --online gembrew/tap/example
+brew install --build-from-source gembrew/tap/example
+brew test gembrew/tap/example
+brew linkage --test gembrew/tap/example
 ```
 
-To test a published tap without mounting the local repository, open a pristine
-Homebrew shell:
+To use a stock, current Homebrew container without mounting the local
+repository or changing Homebrew's update, API, or cleanup behavior, open a
+pristine shell:
 
 ```shell
 gembrew shell --pristine

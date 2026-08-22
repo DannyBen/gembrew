@@ -10,8 +10,9 @@ describe Gembrew::Adder do
 
   it 'adds a gem configuration to an existing tap' do
     (directory/'Formula').mkpath
-    expect(subject.call).to eq directory/'gembrew/example.yml'
-    expect((directory/'gembrew/example.yml').read).to match_approval('initializer/gembrew.yml')
+    expect(subject.call).to eq directory/'gembrew/example'
+    expect((directory/'gembrew/example/formula.yml').read).to match_approval('initializer/formula.yml')
+    expect((directory/'gembrew/example/test.rb').read).to eq %[system bin/"example", "--version"\n]
   end
 
   it 'requires an existing tap' do

@@ -3,10 +3,7 @@ version: "1.4.0"
 source:
   type: github
   repo: bashly-framework/bashly
-output: Formula/bashly.rb
 desc: Bashly CLI
 dependencies:
-  - bash
+  - bash :macos_only
   - libffi :system_on_macos
-test: |-
-  system bin/"bashly", "--version"

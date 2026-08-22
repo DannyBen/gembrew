@@ -12,9 +12,6 @@ source:
 #   tag: v1.2.3                    # optional; defaults to vVERSION
 #   gemspec: <%= gem_name %>.gemspec  # optional; defaults to GEMNAME.gemspec
 
-test: |-
-  system bin/"<%= gem_name %>", "--version"
-
 # Optional metadata and formula overrides:
 # desc: Example command-line application
 # homepage: https://example.com
@@ -23,7 +20,10 @@ test: |-
 # output: Formula/<%= gem_name %>.rb
 # dependencies:
 #   - bash
+#   - bash :macos_only
 #   - libffi :system_on_macos
 
-# To load the Homebrew test body from a Ruby file, replace `test` above with:
-# test_from_file: support/test.rb
+# Optional Ruby hook files:
+#
+#   install_extra.rb  Runs after the standard gem installation
+#   test.rb           Defines the formula test

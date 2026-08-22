@@ -6,8 +6,6 @@ on:
       - main
       - master
   pull_request:
-  schedule:
-    - cron: "17 4 * * 6"
   workflow_dispatch:
 
 permissions: {}
@@ -60,7 +58,12 @@ jobs:
         run: brew test-bot --only-setup
 
       - name: Check tap syntax
-        run: brew test-bot --only-tap-syntax
+        run: |
+          tap="${GITHUB_REPOSITORY/homebrew-/}"
+          tap_path="${{ steps.set-up-homebrew.outputs.repository-path }}"
+          brew style "$tap_path/Formula"
+          brew readall --aliases --os=all --arch=all "$tap"
+          brew audit --except=installed --tap="$tap"
 
       - name: Test changed formulae
         if: github.event_name == 'pull_request'

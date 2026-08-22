@@ -5,10 +5,13 @@ class ExampleCli < Formula
   sha256 "root-checksum"
   license "MIT"
 
-  depends_on "bash"
   depends_on "ruby"
 
   uses_from_macos "libffi"
+
+  on_macos do
+    depends_on "bash"
+  end
 
   resource "dependency" do
     url "https://rubygems.org/downloads/dependency-2.0.0.gem"
@@ -27,10 +30,11 @@ class ExampleCli < Formula
     system "gem", "install", "--ignore-dependencies", "example_cli-#{version}.gem",
       "--install-dir", libexec, "--no-document"
 
-    rm libexec.glob("extensions/*/*/*/mkmf.log")
-    deuniversalize_machos if OS.mac?
-
     (bin/"example").write_env_script libexec/"bin/example", GEM_HOME: ENV.fetch("GEM_HOME")
+
+    rm libexec.glob("extensions/*/*/*/mkmf.log")
+
+    deuniversalize_machos if OS.mac?
   end
 
   test do

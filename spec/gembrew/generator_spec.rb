@@ -15,8 +15,13 @@ describe Gembrew::Generator do
       source_tag: 'v1.2.3', source_gemspec: 'example_cli.gemspec',
       dependencies: [
         Gembrew::Config::Dependency.new(name: 'libffi', tags: [:system_on_macos]),
-        Gembrew::Config::Dependency.new(name: 'bash', tags: []),
+        Gembrew::Config::Dependency.new(name: 'bash', tags: [:macos_only]),
       ],
+      install_extra_body: <<~RUBY,
+        rm libexec.glob("extensions/*/*/*/mkmf.log")
+
+        deuniversalize_machos if OS.mac?
+      RUBY
       test_body: %[system bin/"example", "--version"]
   end
   let(:resolution) do
@@ -50,5 +55,20 @@ describe Gembrew::Generator do
   it 'renders a complete formula using inferred metadata and resolved resources' do
     expect(subject.call).to eq output_path
     expect(output_path.read).to match_approval('generator/formula')
+    expect(output_path.read.lines.grep(/^ +$/)).to be_empty
+  end
+
+  context 'without optional hooks' do
+    before do
+      allow(config).to receive(:install_extra_body)
+      allow(config).to receive(:test_body)
+    end
+
+    it 'generates a basic executable version test' do
+      subject.call
+      expect(output_path.read).to include(
+        %[  test do\n    system bin/"example", "--version"\n  end\n]
+      )
+    end
   end
 end

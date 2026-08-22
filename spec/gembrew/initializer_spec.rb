@@ -19,7 +19,8 @@ describe Gembrew::Initializer do
 
   it 'creates the gem configuration' do
     subject
-    expect((directory/'gembrew/example.yml').read).to match_approval('initializer/gembrew.yml')
+    expect((directory/'gembrew/example/formula.yml').read).to match_approval('initializer/formula.yml')
+    expect(directory/'gembrew/example/test.rb').to be_file
   end
 
   it 'creates the README' do
@@ -37,6 +38,21 @@ describe Gembrew::Initializer do
     subject
     workflow = (directory/'.github/workflows/test.yml').read
     expect(workflow).to include("if: github.event_name == 'pull_request'\n        run: brew test-bot --only-formulae")
+  end
+
+  it 'checks Homebrew syntax without styling Gembrew hook files' do
+    subject
+    workflow = (directory/'.github/workflows/test.yml').read
+    expect(workflow).to include('brew style "$tap_path/Formula"')
+    expect(workflow).to include('brew readall --aliases --os=all --arch=all "$tap"')
+    expect(workflow).to include('brew audit --except=installed --tap="$tap"')
+    expect(workflow).not_to include('brew test-bot --only-tap-syntax')
+  end
+
+  it 'does not run on a schedule' do
+    subject
+    workflow = (directory/'.github/workflows/test.yml').read
+    expect(workflow).not_to include('schedule:', 'cron:')
   end
 
   it 'tests all formulae outside pull requests' do
@@ -74,7 +90,7 @@ describe Gembrew::Initializer do
 
     it 'adds Gembrew without disturbing existing files' do
       expect(subject).to eq directory
-      expect(directory/'gembrew/example.yml').to be_file
+      expect(directory/'gembrew/example/formula.yml').to be_file
       expect(directory/'README.md').to be_file
       expect(directory/'LICENSE').to be_file
     end

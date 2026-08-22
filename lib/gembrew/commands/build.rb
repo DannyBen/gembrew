@@ -4,7 +4,7 @@ require 'gembrew/generator'
 module Gembrew
   module Commands
     class Build < MisterBin::Command
-      help 'Generate Homebrew formulae from gembrew/*.yml'
+      help 'Generate Homebrew formulae from gembrew/*/formula.yml'
 
       usage 'gembrew build [GEM]'
       usage 'gembrew build (-h|--help)'

@@ -25,7 +25,8 @@ gem install gembrew
 
 The generated GitHub Actions workflow uses Homebrew's `test-bot` on Linux,
 Apple Silicon, and Intel macOS. Pull requests test changed formulae; pushes,
-scheduled runs, and manual runs test every formula.
+and manual runs test every formula. Homebrew style checks apply only to files in
+`Formula/`; Gembrew's Ruby hook files are not standalone Homebrew formulae.
 
 Generate all formulae:
 
@@ -50,6 +51,14 @@ Add another Ruby gem:
 
 ```shell
 gembrew add another-gem
+```
+
+Each gem has a `gembrew/NAME/formula.yml` configuration. You may add these
+optional Ruby hook files beside it:
+
+```text
+install_extra.rb  Runs after the standard gem installation
+test.rb           Defines the formula test
 ```
 
 Open an interactive Homebrew environment:

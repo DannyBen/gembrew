@@ -10,10 +10,10 @@ describe Gembrew::Commands::Add do
 
       Dir.chdir(directory) do
         expect { subject.execute %w[add example] }
-          .to output("Added #{directory}/gembrew/example.yml\n").to_stdout
+          .to output("Added #{directory}/gembrew/example\n").to_stdout
       end
 
-      expect(File).to exist("#{directory}/gembrew/example.yml")
+      expect(File).to exist("#{directory}/gembrew/example/formula.yml")
     end
   end
 end

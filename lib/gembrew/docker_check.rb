@@ -24,16 +24,17 @@ module Gembrew
       <<~BASH
         caption() { printf '\\n\\033[1;34m==> gembrew: %s\\033[0m\\n' "$1"; }
         formula=#{formula}
+        qualified_formula="gembrew/tap/$formula"
         caption "styling $formula"
-        brew style "$formula"
+        brew style "$qualified_formula"
         caption "auditing $formula"
-        brew audit --new --online "$formula"
+        brew audit --new --online "$qualified_formula"
         caption "installing $formula"
-        brew install --build-from-source "$formula"
+        brew install --build-from-source "$qualified_formula"
         caption "testing $formula"
-        brew test "$formula"
+        brew test "$qualified_formula"
         caption "checking linkage for $formula"
-        brew linkage --test "$formula"
+        brew linkage --test "$qualified_formula"
       BASH
     end
   end

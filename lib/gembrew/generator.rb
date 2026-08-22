@@ -35,17 +35,22 @@ module Gembrew
 
     def metadata(spec)
       {
-        description:    config.description || spec.summary,
-        homepage:       config.homepage || inferred_homepage(spec),
-        license:        config.license || spec.license || spec.licenses.first,
-        executable:     config.executable || spec.executables.first || spec.name,
-        source_type:    config.source_type,
-        source_repo:    config.source_repo,
-        source_tag:     config.source_tag,
-        source_gemspec: config.source_gemspec,
-        dependencies:   formula_dependencies,
-        test_body:      config.test_body,
+        description:        config.description || spec.summary,
+        homepage:           config.homepage || inferred_homepage(spec),
+        license:            config.license || spec.license || spec.licenses.first,
+        executable:         executable(spec),
+        source_type:        config.source_type,
+        source_repo:        config.source_repo,
+        source_tag:         config.source_tag,
+        source_gemspec:     config.source_gemspec,
+        dependencies:       formula_dependencies,
+        install_extra_body: config.install_extra_body,
+        test_body:          config.test_body || %[system bin/#{executable(spec).inspect}, "--version"\n],
       }
+    end
+
+    def executable(spec)
+      config.executable || spec.executables.first || spec.name
     end
 
     def formula_dependencies

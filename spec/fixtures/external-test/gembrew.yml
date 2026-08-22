@@ -1,6 +1,0 @@
-gem: bashly
-version: "1.4.0"
-source:
-  type: rubygems
-output: Formula/bashly.rb
-test_from_file: support/test.rb

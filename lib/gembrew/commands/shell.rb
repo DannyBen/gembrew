@@ -9,7 +9,7 @@ module Gembrew
       usage 'gembrew shell [--pristine]'
       usage 'gembrew shell (-h|--help)'
 
-      option '-p --pristine', 'Open without mounting the local tap'
+      option '-p --pristine', 'Open a stock, current Homebrew container'
 
       def run
         DockerShell.new.call pristine: args['--pristine']

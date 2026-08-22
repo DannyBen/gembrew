@@ -6,19 +6,21 @@ module Gembrew
   class Config
     Dependency = Data.define(:name, :tags) do
       def system_on_macos? = tags.include? :system_on_macos
+      def macos_only? = tags.include? :macos_only
     end
 
-    DEPENDENCY_TAGS = %w[:system_on_macos].freeze
+    DEPENDENCY_TAGS = %w[:macos_only :system_on_macos].freeze
     DIRECTORY = 'gembrew'
+    FILENAME = 'formula.yml'
     ALLOWED_KEYS = %w[
-      gem version source output desc homepage license executable dependencies test test_from_file
+      gem version source output desc homepage license executable dependencies
     ].freeze
 
     attr_reader :path, :project_path
 
     def self.all(project_path = Pathname.pwd)
       project_path = Pathname(project_path).expand_path
-      paths = (project_path/DIRECTORY).glob('*.yml').sort
+      paths = (project_path/DIRECTORY).glob("*/#{FILENAME}").sort
       raise Error, "No gem configurations found in #{project_path/DIRECTORY}" if paths.empty?
 
       paths.map { |path| new path, project_path: project_path }
@@ -27,7 +29,7 @@ module Gembrew
     def self.find(name, project_path = Pathname.pwd)
       validate_name! name
       project_path = Pathname(project_path).expand_path
-      new project_path/DIRECTORY/"#{name}.yml", project_path: project_path
+      new project_path/DIRECTORY/name/FILENAME, project_path: project_path
     end
 
     def self.validate_name!(name)
@@ -43,7 +45,7 @@ module Gembrew
       validate
     end
 
-    def name = path.basename('.yml').to_s
+    def name = path.dirname.basename.to_s
     def gem_name = data.fetch('gem').to_s
     def version = data['version']&.to_s
     def source = data.fetch('source')
@@ -61,16 +63,8 @@ module Gembrew
       @dependencies ||= data.fetch('dependencies', []).map { |value| parse_dependency value }
     end
 
-    def test_body
-      @test_body ||= if data.has_key?('test')
-        data.fetch('test').to_s
-      else
-        test_path = project_path/data.fetch('test_from_file')
-        raise Error, "Test file does not exist: #{test_path}" unless test_path.file?
-
-        test_path.read
-      end
-    end
+    def install_extra_body = hook_body 'install_extra.rb'
+    def test_body = hook_body 'test.rb'
 
   private
 
@@ -95,10 +89,6 @@ module Gembrew
       require_value 'source'
       validate_source
       validate_dependencies
-
-      return unless data.has_key?('test') == data.has_key?('test_from_file')
-
-      raise Error, 'Provide exactly one of test or test_from_file'
     end
 
     def require_value(key)
@@ -168,6 +158,14 @@ module Gembrew
       raise Error, "dependency #{name.inspect} has duplicate tags" unless values.uniq.length == values.length
 
       Dependency.new(name:, tags: values.map { |tag| tag.delete_prefix(':').to_sym }.freeze)
+    end
+
+    def hook_body(filename)
+      hook_path = path.dirname/filename
+      return unless hook_path.file?
+
+      body = hook_path.read
+      body unless body.strip.empty?
     end
   end
 end

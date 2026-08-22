@@ -3,7 +3,7 @@ Gembrew - Homebrew Formula Generator for Ruby Gems
 Commands:
   init   Initialize a Homebrew tap repository
   add    Add a Ruby gem to this tap repository
-  build  Generate Homebrew formulae from gembrew/*.yml
+  build  Generate Homebrew formulae from gembrew/*/formula.yml
   check  Build and test formulae in clean Homebrew environments
   shell  Open a Homebrew shell for this tap repository
 

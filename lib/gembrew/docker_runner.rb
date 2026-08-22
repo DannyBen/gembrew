@@ -14,6 +14,7 @@ module Gembrew
 
     def call(*command, interactive: false, pristine: false)
       docker_command = ['docker', 'run', '--rm', '--init', '--name', container_name]
+      docker_command << '--pull=always' if pristine
       docker_command << '-it' if interactive
       docker_command.concat environment(interactive: interactive, pristine: pristine)
       unless pristine
@@ -31,11 +32,15 @@ module Gembrew
     attr_reader :command_runner
 
     def environment(interactive:, pristine:)
-      result = %w[
-        --env HOMEBREW_NO_AUTO_UPDATE=1
-        --env HOMEBREW_NO_INSTALL_CLEANUP=1
-        --env HOMEBREW_NO_INSTALL_FROM_API=1
-      ]
+      result = if pristine
+        []
+      else
+        %w[
+          --env HOMEBREW_NO_AUTO_UPDATE=1
+          --env HOMEBREW_NO_INSTALL_CLEANUP=1
+          --env HOMEBREW_NO_INSTALL_FROM_API=1
+        ]
+      end
       prompt = pristine ? 'homebrew' : 'gembrew'
       result.push '--env', "PS1=\\n\\n#{prompt} $ " if interactive
       result
